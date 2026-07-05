@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 560" role="img" aria-labelledby="title desc">
+  <title id="title">Wave orchestration and quality gates</title>
+  <desc id="desc">Optional parallel wave mode and quality gates.</desc>
+  <style>
+    .bg{fill:#07111f}.card{fill:#101c33;stroke:#29456e;stroke-width:2}.txt{font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;fill:#edf6ff}.muted{fill:#a8b8d0}.title{font-size:42px;font-weight:800}.h{font-size:24px;font-weight:800}.b{font-size:18px;font-weight:650}.arrow{stroke:#38bdf8;stroke-width:5;fill:none;stroke-linecap:round;stroke-linejoin:round}.green{fill:#00d084}.orange{fill:#f59e0b}.red{fill:#fb7185}.pill{fill:#172342;stroke:#375072;stroke-width:1.5}
+  </style>
+  <rect class="bg" width="1200" height="560" rx="28"/>
+  <text class="txt title" x="48" y="70">Wave orchestration + gates</text>
+  <text class="muted b" x="50" y="100">Opt-in: mode=wave, concurrency=K, gates=...</text>
+  <rect class="card" x="70" y="150" width="270" height="245" rx="22"/>
+  <text class="txt h" x="100" y="195">Compute wave</text>
+  <text class="txt b" x="100" y="240">ready issues</text>
+  <text class="txt b" x="100" y="280">predecessors merged</text>
+  <text class="txt b" x="100" y="320">no likely overlap</text>
+  <path class="arrow" d="M360 270h90l-22-22M450 270l-22 22"/>
+  <rect class="card" x="475" y="115" width="280" height="315" rx="22"/>
+  <text class="txt h" x="505" y="160">Parallel worktrees</text>
+  <rect class="pill" x="505" y="195" width="210" height="42" rx="21"/><text class="txt b" x="532" y="222">worker A</text>
+  <rect class="pill" x="505" y="255" width="210" height="42" rx="21"/><text class="txt b" x="532" y="282">worker B</text>
+  <rect class="pill" x="505" y="315" width="210" height="42" rx="21"/><text class="txt b" x="532" y="342">worker K</text>
+  <text class="muted b" x="505" y="395">implement in parallel</text>
+  <path class="arrow" d="M770 270h90l-22-22M860 270l-22 22"/>
+  <rect class="card" x="885" y="150" width="245" height="245" rx="22"/>
+  <text class="txt h" x="915" y="195">Merge in series</text>
+  <text class="txt b" x="915" y="240">rebase</text>
+  <text class="txt b" x="915" y="280">re-verify</text>
+  <text class="txt b" x="915" y="320">never push red</text>
+  <rect class="card" x="150" y="455" width="900" height="62" rx="20"/>
+  <text class="txt h" x="190" y="494">Gate pipeline: verify -&gt; lint -&gt; typecheck -&gt; review -&gt; cleanup</text>
+  <circle class="red" cx="1030" cy="486" r="10"/>
+</svg>

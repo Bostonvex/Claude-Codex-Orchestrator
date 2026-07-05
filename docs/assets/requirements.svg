@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 520" role="img" aria-labelledby="title desc">
+  <title id="title">codex-loop requirements</title>
+  <desc id="desc">Dependencies, permissions, and required configuration for codex-loop.</desc>
+  <style>
+    .bg{fill:#0b1020}.panel{fill:#121a2f;stroke:#2b3a61;stroke-width:2}.accent{fill:#00d084}.cyan{fill:#38bdf8}.orange{fill:#f59e0b}.txt{font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;fill:#e5edf8}.muted{fill:#9fb0ca}.title{font-size:42px;font-weight:800}.h{font-size:25px;font-weight:800}.b{font-size:20px;font-weight:650}.s{font-size:17px}.pill{fill:#172342;stroke:#375072;stroke-width:1.5}.line{stroke:#38bdf8;stroke-width:4;stroke-linecap:round}
+  </style>
+  <rect class="bg" width="1200" height="520" rx="28"/>
+  <text class="txt title" x="48" y="68">Requirements</text>
+  <text class="muted s" x="50" y="98">What must exist before the loop can safely run.</text>
+  <rect class="panel" x="48" y="130" width="336" height="310" rx="22"/>
+  <text class="cyan h" x="78" y="174">Runtime</text>
+  <text class="txt b" x="78" y="220">Claude Code</text>
+  <text class="txt b" x="78" y="262">gh CLI + git</text>
+  <text class="txt b" x="78" y="304">/loop for self-pacing</text>
+  <text class="txt b" x="78" y="346">Node.js for local worker</text>
+  <text class="muted s" x="78" y="390">Local Codex uses codex CLI auth.</text>
+  <rect class="panel" x="432" y="130" width="336" height="310" rx="22"/>
+  <text class="orange h" x="462" y="174">GitHub permissions</text>
+  <text class="txt b" x="462" y="220">create labels + issues</text>
+  <text class="txt b" x="462" y="262">comment + pin issue</text>
+  <text class="txt b" x="462" y="304">checkout + squash-merge PRs</text>
+  <text class="txt b" x="462" y="346">push to default branch</text>
+  <text class="muted s" x="462" y="390">Never force-push. Never merge red CI.</text>
+  <rect class="panel" x="816" y="130" width="336" height="310" rx="22"/>
+  <text class="accent h" x="846" y="174">Minimum config</text>
+  <rect class="pill" x="846" y="204" width="246" height="38" rx="19"/><text class="txt b" x="868" y="229">state=RUN</text>
+  <rect class="pill" x="846" y="254" width="246" height="38" rx="19"/><text class="txt b" x="868" y="279">worker=local</text>
+  <rect class="pill" x="846" y="304" width="246" height="38" rx="19"/><text class="txt b" x="868" y="329">verify=auto-detect</text>
+  <rect class="pill" x="846" y="354" width="246" height="38" rx="19"/><text class="txt b" x="868" y="379">deploy=empty</text>
+  <text class="muted s" x="846" y="420">Scaffold creates runnable defaults.</text>
+  <path class="line" d="M390 285h34M774 285h34"/>
+</svg>

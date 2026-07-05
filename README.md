@@ -33,6 +33,7 @@ codex-loop closes that gap, in **whatever repo you invoke it from** — it hardc
 - [How it manages Codex's work](#how-it-manages-codexs-work) — **how Codex is activated**
 - [The autonomous loop](#the-autonomous-loop) — how restarts are eliminated
 - [Guardrails](#guardrails)
+- [Advanced guides](#advanced-guides) — wave mode, personas, and gated cron
 - [Layout & scope](#layout--scope)
 - [Wave orchestration & quality gates](docs/ORCHESTRATION.md) — opt-in parallelism + gate pipeline
 - [Agent personas](docs/PERSONAS.md) — specialized roles (architect, verifier, reviewer, devops…)
@@ -42,9 +43,13 @@ codex-loop closes that gap, in **whatever repo you invoke it from** — it hardc
 > a plan → assigned/chained issues → loop iterations → drain, with the actual comments and
 > tick logs produced at each step.
 
+![codex-loop full-cycle example](docs/assets/example-cycle.svg)
+
 ---
 
 ## Requirements
+
+![codex-loop requirements infographic](docs/assets/requirements.svg)
 
 ### Dependencies
 
@@ -89,6 +94,8 @@ for the full reference.
 ---
 
 ## Quick start
+
+![codex-loop quick start infographic](docs/assets/quick-start.svg)
 
 **0. Prerequisites.** Confirm the [dependencies](#requirements) for your worker mode:
 
@@ -136,6 +143,8 @@ plan into assigned, chained issues at once, run `/codex-loop plan: <file>` (see
 
 ## Commands
 
+![codex-loop commands infographic](docs/assets/commands.svg)
+
 codex-loop has no bespoke CLI flags of its own — you drive it by *how you invoke the skill*.
 The tunable "options" live in the [config block](#configuration-options), not on the command.
 
@@ -165,6 +174,8 @@ The tunable "options" live in the [config block](#configuration-options), not on
 ---
 
 ## Configuration options
+
+![codex-loop configuration infographic](docs/assets/configuration.svg)
 
 All project-specific behaviour lives in a `CODEX-LOOP:CONFIG` block in the **Control Tower
 issue body** — not in the skill. Edit the issue to retune the loop; changes take effect on the
@@ -200,6 +211,8 @@ trailer=Co-Authored-By: Claude <noreply@anthropic.com>
 
 ## Labels
 
+![codex-loop labels infographic](docs/assets/labels.svg)
+
 The skill creates these on first run. They are intrinsic to codex-loop, not to any project.
 
 | Label | Meaning |
@@ -215,6 +228,8 @@ The skill creates these on first run. They are intrinsic to codex-loop, not to a
 ---
 
 ## How it manages Codex's work
+
+![codex-loop Claude and Codex workflow infographic](docs/assets/codex-workflow.svg)
 
 This is the core of the engine. Claude never lets Codex run free — it hands Codex **one frozen,
 verifiable unit of work at a time** and gates everything Codex produces. There are **two ways
@@ -302,6 +317,8 @@ large ones to the cloud.
 
 ## The autonomous loop
 
+![codex-loop autonomous loop infographic](docs/assets/autonomous-loop.svg)
+
 Under `/loop /codex-loop`, after each iteration the skill decides when to wake next instead of
 waiting for you — this is what removes the manual restart:
 
@@ -319,6 +336,8 @@ A max-iterations / cost backstop halts the loop regardless, and logs why.
 
 ## Guardrails
 
+![codex-loop guardrails infographic](docs/assets/guardrails.svg)
+
 Applied **every iteration**, inside the guard/park path — not optional:
 
 - **PAUSE** halts the loop. **Park for human** (`needs:human`, don't act) on money/vendor/
@@ -335,7 +354,19 @@ check runs before any assign/merge/deploy, by construction.
 
 ---
 
+## Advanced guides
+
+![codex-loop wave orchestration infographic](docs/assets/wave-orchestration.svg)
+
+![codex-loop agent personas infographic](docs/assets/personas.svg)
+
+![codex-loop unattended cron infographic](docs/assets/cron.svg)
+
+---
+
 ## Layout & scope
+
+![codex-loop layout and scope infographic](docs/assets/layout-scope.svg)
 
 ```
 codex-loop/

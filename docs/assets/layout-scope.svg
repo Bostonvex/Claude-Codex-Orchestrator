@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 560" role="img" aria-labelledby="title desc">
+  <title id="title">codex-loop layout and scope</title>
+  <desc id="desc">Repository layout and repo-agnostic scope.</desc>
+  <style>
+    .bg{fill:#0b1020}.tree{fill:#0f172a;stroke:#334155;stroke-width:2}.card{fill:#101827;stroke:#2b3a61;stroke-width:2}.txt{font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;fill:#edf6ff}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;fill:#dff7ff}.muted{fill:#a8b8d0}.title{font-size:42px;font-weight:800}.h{font-size:23px;font-weight:800}.b{font-size:18px;font-weight:650}.m{font-size:17px}.green{fill:#00d084}.cyan{fill:#38bdf8}
+  </style>
+  <rect class="bg" width="1200" height="560" rx="28"/>
+  <text class="txt title" x="48" y="70">Layout + scope</text>
+  <text class="muted b" x="50" y="100">One global skill, any repo. Project specifics live in Control Tower config.</text>
+  <rect class="tree" x="70" y="140" width="520" height="350" rx="22"/>
+  <text class="mono m" x="105" y="180">codex-loop/</text>
+  <text class="mono m" x="135" y="215">README.md</text>
+  <text class="mono m" x="135" y="250">docs/</text>
+  <text class="mono m" x="165" y="285">DESIGN.md</text>
+  <text class="mono m" x="165" y="318">ISSUE-PROTOCOL.md</text>
+  <text class="mono m" x="165" y="351">ORCHESTRATION.md</text>
+  <text class="mono m" x="165" y="384">PERSONAS.md</text>
+  <text class="mono m" x="165" y="417">CRON.md</text>
+  <text class="mono m" x="135" y="452">skills/codex-loop/SKILL.md</text>
+  <text class="mono m" x="135" y="485">workflows/verify-fanout.mjs</text>
+  <rect class="card" x="660" y="158" width="430" height="120" rx="22"/>
+  <circle class="green" cx="700" cy="202" r="14"/><text class="txt h" x="730" y="210">No project hardcoding</text>
+  <text class="muted b" x="700" y="250">deploy, verify, priority, worker, gates</text>
+  <rect class="card" x="660" y="315" width="430" height="120" rx="22"/>
+  <circle class="cyan" cx="700" cy="359" r="14"/><text class="txt h" x="730" y="367">GitHub is source of truth</text>
+  <text class="muted b" x="700" y="407">labels + comments + config reconstruct state</text>
+</svg>

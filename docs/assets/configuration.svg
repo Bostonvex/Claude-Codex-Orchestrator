@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 560" role="img" aria-labelledby="title desc">
+  <title id="title">Control Tower configuration</title>
+  <desc id="desc">The CODEX-LOOP CONFIG block and the meaning of each key.</desc>
+  <style>
+    .bg{fill:#07111f}.code{fill:#0f172a;stroke:#334155;stroke-width:2}.card{fill:#101c33;stroke:#29456e;stroke-width:2}.txt{font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;fill:#edf6ff}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;fill:#dff7ff}.muted{fill:#9fb3c8}.title{font-size:42px;font-weight:800}.h{font-size:23px;font-weight:800}.b{font-size:18px}.m{font-size:20px;font-weight:800}.green{fill:#00d084}.cyan{fill:#38bdf8}.orange{fill:#f59e0b}
+  </style>
+  <rect class="bg" width="1200" height="560" rx="28"/>
+  <text class="txt title" x="48" y="70">Configuration options</text>
+  <text class="muted b" x="50" y="100">A repo is tuned by editing the Control Tower issue, not the skill.</text>
+  <rect class="code" x="60" y="135" width="448" height="360" rx="22"/>
+  <text class="mono b" x="92" y="178">&lt;!-- CODEX-LOOP:CONFIG</text>
+  <text class="mono m" x="112" y="220">state=RUN</text>
+  <text class="mono m" x="112" y="258">worker=local</text>
+  <text class="mono m" x="112" y="296">deploy=</text>
+  <text class="mono m" x="112" y="334">verify=</text>
+  <text class="mono m" x="112" y="372">priority=number</text>
+  <text class="mono m" x="112" y="410">mode=sequential</text>
+  <text class="mono m" x="112" y="448">gates=verify</text>
+  <text class="mono b" x="92" y="482">--&gt;</text>
+  <g transform="translate(558 135)">
+    <rect class="card" width="270" height="105" rx="18"/><circle class="green" cx="35" cy="35" r="12"/><text class="txt h" x="60" y="42">Control</text><text class="muted b" x="28" y="78">state, deploy, trailer</text>
+    <rect class="card" y="128" width="270" height="105" rx="18"/><circle class="cyan" cx="35" cy="163" r="12"/><text class="txt h" x="60" y="170">Routing</text><text class="muted b" x="28" y="206">worker, priority</text>
+    <rect class="card" y="256" width="270" height="105" rx="18"/><circle class="orange" cx="35" cy="291" r="12"/><text class="txt h" x="60" y="298">Quality</text><text class="muted b" x="28" y="334">verify, gates</text>
+  </g>
+  <g transform="translate(870 135)">
+    <rect class="card" width="270" height="105" rx="18"/><circle class="green" cx="35" cy="35" r="12"/><text class="txt h" x="60" y="42">Parallelism</text><text class="muted b" x="28" y="78">mode, concurrency</text>
+    <rect class="card" y="128" width="270" height="105" rx="18"/><circle class="cyan" cx="35" cy="163" r="12"/><text class="txt h" x="60" y="170">Defaults</text><text class="muted b" x="28" y="206">local, sequential, verify</text>
+    <rect class="card" y="256" width="270" height="105" rx="18"/><circle class="orange" cx="35" cy="291" r="12"/><text class="txt h" x="60" y="298">Scope</text><text class="muted b" x="28" y="334">repo-specific only</text>
+  </g>
+</svg>

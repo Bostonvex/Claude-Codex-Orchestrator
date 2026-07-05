@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 520" role="img" aria-labelledby="title desc">
+  <title id="title">Unattended cron</title>
+  <desc id="desc">Gated unattended cron flow for codex-loop.</desc>
+  <style>
+    .bg{fill:#07111f}.card{fill:#101c33;stroke:#29456e;stroke-width:2}.txt{font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;fill:#edf6ff}.muted{fill:#a8b8d0}.title{font-size:42px;font-weight:800}.h{font-size:24px;font-weight:800}.b{font-size:19px;font-weight:650}.s{font-size:16px}.red{fill:#fb7185}.green{fill:#00d084}.orange{fill:#f59e0b}.cyan{fill:#38bdf8}.arrow{stroke:#38bdf8;stroke-width:5;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  </style>
+  <rect class="bg" width="1200" height="520" rx="28"/>
+  <text class="txt title" x="48" y="70">Unattended cron</text>
+  <text class="muted s" x="50" y="100">Built and documented, but gated by explicit sign-off.</text>
+  <rect class="card" x="70" y="150" width="285" height="220" rx="22"/>
+  <circle class="orange" cx="110" cy="192" r="14"/><text class="txt h" x="140" y="200">Pre-flight</text>
+  <text class="txt b" x="100" y="245">headless gh auth</text>
+  <text class="txt b" x="100" y="285">Codex reachable</text>
+  <text class="txt b" x="100" y="325">branch rules compatible</text>
+  <path class="arrow" d="M370 260h90l-22-22M460 260l-22 22"/>
+  <rect class="card" x="485" y="150" width="285" height="220" rx="22"/>
+  <circle class="red" cx="525" cy="192" r="14"/><text class="txt h" x="555" y="200">Sign-off</text>
+  <text class="txt b" x="515" y="245">interactive dry run</text>
+  <text class="txt b" x="515" y="285">park rules accepted</text>
+  <text class="txt b" x="515" y="325">state=PAUSE trusted</text>
+  <path class="arrow" d="M785 260h90l-22-22M875 260l-22 22"/>
+  <rect class="card" x="900" y="150" width="245" height="220" rx="22"/>
+  <circle class="green" cx="940" cy="192" r="14"/><text class="txt h" x="970" y="200">Schedule</text>
+  <text class="txt b" x="930" y="245">/schedule create</text>
+  <text class="txt b" x="930" y="285">one tick per firing</text>
+  <text class="txt b" x="930" y="325">PAUSE no-ops</text>
+  <rect class="card" x="320" y="420" width="560" height="56" rx="18"/>
+  <text class="txt b" x="360" y="455">Recommended: daytime cron before overnight cron.</text>
+</svg>

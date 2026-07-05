@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 520" role="img" aria-labelledby="title desc">
+  <title id="title">codex-loop commands</title>
+  <desc id="desc">Command entry points for codex-loop.</desc>
+  <style>
+    .bg{fill:#0b1020}.term{fill:#0f172a;stroke:#334155;stroke-width:2}.txt{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;fill:#dff7ff}.sans{font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;fill:#edf6ff}.muted{fill:#9fb3c8}.title{font-size:42px;font-weight:800}.cmd{font-size:27px;font-weight:800}.body{font-size:20px}.small{font-size:16px}.green{fill:#00d084}.orange{fill:#f59e0b}.cyan{fill:#38bdf8}
+  </style>
+  <rect class="bg" width="1200" height="520" rx="28"/>
+  <text class="sans title" x="48" y="70">Commands</text>
+  <text class="muted small" x="50" y="100">Invocation controls behavior; project options live in Control Tower config.</text>
+  <rect class="term" x="64" y="142" width="500" height="112" rx="18"/><circle class="green" cx="96" cy="174" r="8"/><text class="txt cmd" x="120" y="184">/codex-loop</text><text class="sans body" x="92" y="224">one iteration, or first-run scaffold</text>
+  <rect class="term" x="636" y="142" width="500" height="112" rx="18"/><circle class="cyan" cx="668" cy="174" r="8"/><text class="txt cmd" x="692" y="184">/loop /codex-loop</text><text class="sans body" x="664" y="224">self-paced autonomous loop</text>
+  <rect class="term" x="64" y="292" width="500" height="112" rx="18"/><circle class="orange" cx="96" cy="324" r="8"/><text class="txt cmd" x="120" y="334">/codex-loop --check</text><text class="sans body" x="92" y="374">dry config and dependency check</text>
+  <rect class="term" x="636" y="292" width="500" height="112" rx="18"/><circle class="green" cx="668" cy="324" r="8"/><text class="txt cmd" x="692" y="334">/codex-loop plan: ...</text><text class="sans body" x="664" y="374">turn a plan into chained issues</text>
+  <rect class="term" x="322" y="432" width="556" height="54" rx="18"/><text class="txt body" x="358" y="466">/schedule ... /codex-loop</text><text class="sans small" x="674" y="466">gated cron</text>
+</svg>

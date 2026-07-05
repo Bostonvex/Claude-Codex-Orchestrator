@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 520" role="img" aria-labelledby="title desc">
+  <title id="title">codex-loop full cycle example</title>
+  <desc id="desc">Plan to shipped cycle through codex-loop.</desc>
+  <style>
+    .bg{fill:#0b1020}.node{fill:#101827;stroke:#2b3a61;stroke-width:2}.txt{font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;fill:#edf6ff}.muted{fill:#a8b8d0}.title{font-size:42px;font-weight:800}.h{font-size:23px;font-weight:800}.b{font-size:18px;font-weight:650}.arrow{stroke:#38bdf8;stroke-width:5;fill:none;stroke-linecap:round;stroke-linejoin:round}.green{fill:#00d084}.orange{fill:#f59e0b}.cyan{fill:#38bdf8}
+  </style>
+  <rect class="bg" width="1200" height="520" rx="28"/>
+  <text class="txt title" x="48" y="70">Full-cycle example</text>
+  <text class="muted b" x="50" y="100">A plan becomes chained issues, loop iterations, and a drained queue.</text>
+  <g transform="translate(58 170)">
+    <rect class="node" width="180" height="130" rx="20"/><circle class="green" cx="36" cy="38" r="13"/><text class="txt h" x="60" y="46">Plan</text><text class="muted b" x="30" y="88">docs/PLAN.md</text>
+  </g>
+  <path class="arrow" d="M250 235h80l-22-22M330 235l-22 22"/>
+  <g transform="translate(350 170)">
+    <rect class="node" width="180" height="130" rx="20"/><circle class="cyan" cx="36" cy="38" r="13"/><text class="txt h" x="60" y="46">Issues</text><text class="muted b" x="30" y="88">owners + deps</text>
+  </g>
+  <path class="arrow" d="M542 235h80l-22-22M622 235l-22 22"/>
+  <g transform="translate(642 170)">
+    <rect class="node" width="180" height="130" rx="20"/><circle class="orange" cx="36" cy="38" r="13"/><text class="txt h" x="60" y="46">Run</text><text class="muted b" x="30" y="88">/loop /codex-loop</text>
+  </g>
+  <path class="arrow" d="M834 235h80l-22-22M914 235l-22 22"/>
+  <g transform="translate(934 170)">
+    <rect class="node" width="180" height="130" rx="20"/><circle class="green" cx="36" cy="38" r="13"/><text class="txt h" x="60" y="46">Drain</text><text class="muted b" x="30" y="88">merged + closed</text>
+  </g>
+  <rect class="node" x="240" y="365" width="720" height="72" rx="20"/>
+  <text class="txt h" x="282" y="410">State trail: LOOP:ASSIGN -&gt; LOOP:STATUS -&gt; LOOP:VERIFY</text>
+</svg>

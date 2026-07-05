@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 520" role="img" aria-labelledby="title desc">
+  <title id="title">Autonomous loop cadence</title>
+  <desc id="desc">Self-paced wake timings for codex-loop.</desc>
+  <style>
+    .bg{fill:#0b1020}.card{fill:#101827;stroke:#2b3a61;stroke-width:2}.txt{font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;fill:#edf6ff}.muted{fill:#a8b8d0}.title{font-size:42px;font-weight:800}.h{font-size:24px;font-weight:800}.b{font-size:20px;font-weight:700}.s{font-size:16px}.ring{fill:none;stroke:#38bdf8;stroke-width:10;stroke-linecap:round;stroke-dasharray:120 36}.green{fill:#00d084}.orange{fill:#f59e0b}.red{fill:#fb7185}
+  </style>
+  <rect class="bg" width="1200" height="520" rx="28"/>
+  <text class="txt title" x="48" y="70">Autonomous loop</text>
+  <text class="muted s" x="50" y="100">/loop /codex-loop wakes only as fast as the repo needs.</text>
+  <circle class="ring" cx="600" cy="275" r="145"/>
+  <text class="txt h" x="528" y="260">self-paced</text>
+  <text class="txt b" x="548" y="300">wakeups</text>
+  <rect class="card" x="70" y="150" width="285" height="95" rx="20"/><circle class="orange" cx="105" cy="188" r="12"/><text class="txt h" x="130" y="196">~270s</text><text class="muted s" x="130" y="225">PR CI or deploy settling</text>
+  <rect class="card" x="70" y="285" width="285" height="95" rx="20"/><circle class="green" cx="105" cy="323" r="12"/><text class="txt h" x="130" y="331">~600s</text><text class="muted s" x="130" y="360">work happened</text>
+  <rect class="card" x="845" y="150" width="285" height="95" rx="20"/><circle class="green" cx="880" cy="188" r="12"/><text class="txt h" x="905" y="196">~900s</text><text class="muted s" x="905" y="225">routine polling</text>
+  <rect class="card" x="845" y="285" width="285" height="95" rx="20"/><circle class="red" cx="880" cy="323" r="12"/><text class="txt h" x="905" y="331">STOP</text><text class="muted s" x="905" y="360">queue drained</text>
+  <rect class="card" x="430" y="420" width="340" height="62" rx="20"/><text class="txt b" x="468" y="458">PAUSE -&gt; ~1800s re-check</text>
+</svg>

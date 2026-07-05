@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 520" role="img" aria-labelledby="title desc">
+  <title id="title">codex-loop labels</title>
+  <desc id="desc">GitHub labels used as codex-loop state.</desc>
+  <style>
+    .bg{fill:#0b1020}.card{fill:#101827;stroke:#2b3a61;stroke-width:2}.pill{fill:#172342;stroke:#375072;stroke-width:2}.txt{font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;fill:#edf6ff}.muted{fill:#a9b9cf}.title{font-size:42px;font-weight:800}.h{font-size:24px;font-weight:800}.b{font-size:19px;font-weight:700}.s{font-size:16px}.green{fill:#00d084}.blue{fill:#38bdf8}.red{fill:#fb7185}.orange{fill:#f59e0b}
+  </style>
+  <rect class="bg" width="1200" height="520" rx="28"/>
+  <text class="txt title" x="48" y="70">Labels = status</text>
+  <text class="muted s" x="50" y="100">The queue is reconstructable from GitHub labels alone.</text>
+  <rect class="card" x="70" y="140" width="310" height="270" rx="22"/>
+  <text class="blue h" x="100" y="184">Control</text>
+  <rect class="pill" x="100" y="222" width="220" height="44" rx="22"/><text class="txt b" x="124" y="250">codex-loop:control</text>
+  <text class="muted s" x="100" y="305">single dashboard issue</text>
+  <text class="muted s" x="100" y="335">config + tick log + kill switch</text>
+  <rect class="card" x="445" y="140" width="310" height="270" rx="22"/>
+  <text class="green h" x="475" y="184">Ownership</text>
+  <rect class="pill" x="475" y="222" width="190" height="44" rx="22"/><text class="txt b" x="500" y="250">agent:claude</text>
+  <rect class="pill" x="475" y="286" width="190" height="44" rx="22"/><text class="txt b" x="500" y="314">agent:codex</text>
+  <text class="muted s" x="475" y="370">who implements the issue</text>
+  <rect class="card" x="820" y="140" width="310" height="270" rx="22"/>
+  <text class="orange h" x="850" y="184">Queue</text>
+  <rect class="pill" x="850" y="222" width="180" height="44" rx="22"/><text class="txt b" x="878" y="250">loop:ready</text>
+  <rect class="pill" x="850" y="286" width="190" height="44" rx="22"/><text class="txt b" x="876" y="314">loop:blocked</text>
+  <rect class="pill" x="850" y="350" width="190" height="44" rx="22"/><text class="txt b" x="878" y="378">needs:human</text>
+  <circle class="green" cx="410" cy="278" r="7"/><circle class="blue" cx="785" cy="278" r="7"/>
+  <text class="muted s" x="390" y="455">Unblock means swap loop:blocked -&gt; loop:ready.</text>
+</svg>

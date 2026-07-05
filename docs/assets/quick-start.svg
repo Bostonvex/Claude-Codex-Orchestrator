@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 520" role="img" aria-labelledby="title desc">
+  <title id="title">codex-loop quick start</title>
+  <desc id="desc">The four-step quick start flow for codex-loop.</desc>
+  <style>
+    .bg{fill:#07111f}.card{fill:#101c33;stroke:#29456e;stroke-width:2}.num{fill:#00d084}.txt{font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;fill:#edf6ff}.muted{fill:#a8b8d0}.title{font-size:42px;font-weight:800}.h{font-size:25px;font-weight:800}.b{font-size:19px;font-weight:650}.s{font-size:16px}.arrow{stroke:#38bdf8;stroke-width:5;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  </style>
+  <rect class="bg" width="1200" height="520" rx="28"/>
+  <text class="txt title" x="48" y="70">Quick start</text>
+  <text class="muted s" x="50" y="100">Install once, scaffold per repo, then let the loop pace itself.</text>
+  <g transform="translate(54 150)">
+    <rect class="card" width="240" height="235" rx="22"/>
+    <circle class="num" cx="44" cy="44" r="24"/><text class="bg h" x="36" y="53">0</text>
+    <text class="txt h" x="76" y="52">Prereqs</text>
+    <text class="txt b" x="28" y="104">gh auth status</text>
+    <text class="txt b" x="28" y="144">git --version</text>
+    <text class="txt b" x="28" y="184">/codex:setup</text>
+  </g>
+  <path class="arrow" d="M310 268h72l-20-20M382 268l-20 20"/>
+  <g transform="translate(406 150)">
+    <rect class="card" width="240" height="235" rx="22"/>
+    <circle class="num" cx="44" cy="44" r="24"/><text class="bg h" x="38" y="53">1</text>
+    <text class="txt h" x="76" y="52">Install</text>
+    <text class="txt b" x="28" y="115">symlink skill</text>
+    <text class="txt b" x="28" y="155">reopen Claude Code</text>
+    <text class="muted s" x="28" y="195">one global skill</text>
+  </g>
+  <path class="arrow" d="M662 268h72l-20-20M734 268l-20 20"/>
+  <g transform="translate(758 150)">
+    <rect class="card" width="240" height="235" rx="22"/>
+    <circle class="num" cx="44" cy="44" r="24"/><text class="bg h" x="36" y="53">2</text>
+    <text class="txt h" x="76" y="52">Scaffold</text>
+    <text class="txt b" x="28" y="104">/codex-loop</text>
+    <text class="txt b" x="28" y="144">labels</text>
+    <text class="txt b" x="28" y="184">Control Tower</text>
+  </g>
+  <path class="arrow" d="M1000 268h60v88H170v54l-20-20M170 410l-20 20"/>
+  <g transform="translate(214 405)">
+    <rect class="card" width="780" height="70" rx="20"/>
+    <text class="txt h" x="28" y="44">3 Add work: agent:codex / agent:claude + loop:ready</text>
+  </g>
+  <text class="muted s" x="872" y="455">Then run: /loop /codex-loop</text>
+</svg>

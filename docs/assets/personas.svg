@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 560" role="img" aria-labelledby="title desc">
+  <title id="title">codex-loop personas</title>
+  <desc id="desc">Specialized personas used by codex-loop.</desc>
+  <style>
+    .bg{fill:#0b1020}.card{fill:#101827;stroke:#2b3a61;stroke-width:2}.badge{fill:#172342;stroke:#375072;stroke-width:1.5}.txt{font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;fill:#edf6ff}.muted{fill:#a8b8d0}.title{font-size:42px;font-weight:800}.h{font-size:24px;font-weight:800}.b{font-size:19px;font-weight:700}.s{font-size:16px}.green{fill:#00d084}.cyan{fill:#38bdf8}.orange{fill:#f59e0b}
+  </style>
+  <rect class="bg" width="1200" height="560" rx="28"/>
+  <text class="txt title" x="48" y="70">Agent personas</text>
+  <text class="muted s" x="50" y="100">Specialists plug into intake, implementation, gates, and deployment.</text>
+  <rect class="card" x="70" y="145" width="320" height="300" rx="22"/>
+  <text class="cyan h" x="100" y="190">Intake</text>
+  <rect class="badge" x="100" y="225" width="210" height="42" rx="21"/><text class="txt b" x="126" y="252">architect</text>
+  <rect class="badge" x="100" y="285" width="210" height="42" rx="21"/><text class="txt b" x="126" y="312">context-analyzer</text>
+  <text class="muted s" x="100" y="375">decompose, map code, freeze contracts</text>
+  <rect class="card" x="440" y="145" width="320" height="300" rx="22"/>
+  <text class="green h" x="470" y="190">Implement</text>
+  <rect class="badge" x="470" y="225" width="220" height="42" rx="21"/><text class="txt b" x="496" y="252">codex-implementer</text>
+  <rect class="badge" x="470" y="285" width="220" height="42" rx="21"/><text class="txt b" x="496" y="312">claude-implementer</text>
+  <rect class="badge" x="470" y="345" width="220" height="42" rx="21"/><text class="txt b" x="496" y="372">devops / docs / deps</text>
+  <rect class="card" x="810" y="145" width="320" height="300" rx="22"/>
+  <text class="orange h" x="840" y="190">Gates</text>
+  <rect class="badge" x="840" y="225" width="210" height="42" rx="21"/><text class="txt b" x="866" y="252">verifier</text>
+  <rect class="badge" x="840" y="285" width="210" height="42" rx="21"/><text class="txt b" x="866" y="312">reviewer</text>
+  <rect class="badge" x="840" y="345" width="210" height="42" rx="21"/><text class="txt b" x="866" y="372">cleanup</text>
+  <text class="muted s" x="302" y="500">Owner first, then role:* label, then keyword routing at plan intake.</text>
+</svg>
