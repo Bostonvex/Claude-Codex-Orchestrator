@@ -34,6 +34,7 @@ codex-loop closes that gap, in **whatever repo you invoke it from** — it hardc
 - [Layout & scope](#layout--scope)
 - [Wave orchestration & quality gates](docs/ORCHESTRATION.md) — opt-in parallelism + gate pipeline
 - [Agent personas](docs/PERSONAS.md) — specialized roles (architect, verifier, reviewer, devops…)
+- [Unattended cron](docs/CRON.md) — Phase 3 wiring + sign-off (gated)
 
 > **See it end to end:** [docs/EXAMPLE-CYCLE.md](docs/EXAMPLE-CYCLE.md) walks one feature from
 > a plan → assigned/chained issues → loop iterations → drain, with the actual comments and
@@ -344,7 +345,9 @@ codex-loop/
 │   ├── PERSONAS.md          ← specialized agent personas + how they're selected/dispatched
 │   ├── EXAMPLE-CYCLE.md     ← full worked example: plan → issues → loop → drain
 │   ├── INSTALL.md           ← global install, first-run scaffolding, running the loop
+│   ├── CRON.md              ← unattended-cron wiring + sign-off checklist (gated)
 │   └── ROADMAP.md           ← phased plan (validation evidence per item)
+├── CHANGELOG.md
 ├── skills/codex-loop/SKILL.md   ← the invocable /codex-loop orchestrator
 └── workflows/verify-fanout.mjs  ← deterministic parallel PR verification (Workflow asset)
 ```
