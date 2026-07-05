@@ -64,8 +64,8 @@ codex-loop/
 └── skills/codex-loop/SKILL.md   ← the invocable /codex-loop orchestrator
 ```
 
-## Reference target
+## Scope
 
-Built for, and validated against, the two-agent loop on `Bostonvex/auspicia` (Claude =
-frontend + orchestration, Codex = backend). That repo is the reference deployment, not a
-dependency — the skill itself contains no auspicia-specific code.
+The skill contains no project-specific code. Everything a given repo needs — deploy command,
+CI command, priority order, worker mode, the kill switch — lives in that repo's Control Tower
+issue config block, created on first run. One global skill, any repo.
