@@ -198,3 +198,8 @@ To ship more, add issues (or run another `/codex-loop plan: …`) and the loop w
 - **Pause mid-flight.** Set `state=PAUSE` in #7's config block; the next iteration no-ops and
   the loop backs off, auto-resuming when you set it back to `RUN`. Every closed issue and
   merged PR stays put — state lives in GitHub, so nothing is lost.
+
+- **Parallelism & gates.** With `mode=wave` + `concurrency=2`, the independent `#12` and `#14`
+  (once unblocked) would be implemented in parallel worktrees and merged in series. With
+  `gates=verify,review`, each merge would additionally pass an independent verifier/reviewer
+  persona. See [ORCHESTRATION.md](ORCHESTRATION.md) and [PERSONAS.md](PERSONAS.md).

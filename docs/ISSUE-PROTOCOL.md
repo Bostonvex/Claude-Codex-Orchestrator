@@ -60,6 +60,9 @@ worker=local         # local | cloud | hybrid  (default: local)
 deploy=              # shell command to deploy; empty = never deploy
 verify=              # CI/verification command(s); empty = auto-detect
 priority=number      # "number" (issue # asc) or comma-separated backlog file paths
+mode=sequential      # sequential | wave  (see ORCHESTRATION.md)
+concurrency=1        # max issues implemented at once in wave mode
+gates=verify         # verify,lint,typecheck,review,cleanup — gates before merge
 trailer=Co-Authored-By: Claude <noreply@anthropic.com>
 -->
 ```

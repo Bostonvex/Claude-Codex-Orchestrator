@@ -32,7 +32,8 @@ its next issue. So the design automates the **orchestrator's cadence** and, opti
 ```
 
 Nothing project-specific lives in the skill. **All parameters** — deploy command, CI command,
-priority order, worker mode, the kill switch — live in the Control Tower issue's config block
+priority order, worker mode, parallelism (`mode`/`concurrency`), quality `gates`, the kill
+switch — live in the Control Tower issue's config block
 (see ISSUE-PROTOCOL.md). This is what makes one global skill drive any repo.
 
 Cadence and engine stay decoupled: run the engine by hand (`/codex-loop`), under self-paced
@@ -107,3 +108,25 @@ check runs before any assign/merge/deploy, every iteration, by construction.
 
 `state=PAUSE` · both queues drained · dirty tree the loop didn't create · max-iterations
 backstop (cost ceiling) · an issue that trips the park conditions (park it; continue the rest).
+
+## 8. Opt-in augmentations
+
+The base engine above is the default (`mode=sequential`, `concurrency=1`, `gates=verify`) —
+one issue per tick, one CI gate. Three augmentations layer on top, all off by default and all
+configured from the same Control Tower block:
+
+- **Wave orchestration** (`mode=wave`, `concurrency=K`) — process every unblocked ready issue
+  in parallel worktrees, merging in series. See [ORCHESTRATION.md](ORCHESTRATION.md).
+- **Quality gates** (`gates=verify,lint,typecheck,review,cleanup`) — a per-issue pipeline run
+  before every merge; a failing gate bounces. See [ORCHESTRATION.md](ORCHESTRATION.md#quality-gates).
+- **Agent personas** — dispatch specialized subagents (architect, verifier, reviewer, devops,
+  documentation, …) by owner + `role:*` label + keyword. See [PERSONAS.md](PERSONAS.md).
+
+These reimplement ideas from `barkain/claude-code-workflow-orchestration` (no code copied) and
+never weaken the guardrails in §6 — a gate can only make the merge bar *higher*.
+
+## 9. Unattended cadence (gated)
+
+Interactive `/loop` is the sanctioned cadence today. An unattended `/schedule` cron is wired
+and documented in [CRON.md](CRON.md) but **user-gated** — running the loop with no human
+watching is an explicit sign-off, never a default.
