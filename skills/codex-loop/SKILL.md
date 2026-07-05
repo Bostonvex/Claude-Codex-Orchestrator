@@ -50,6 +50,9 @@ Do this before any loop work, every invocation:
    deploy=              # shell command to deploy; empty = never deploy
    verify=              # shell command(s) for CI/verification; empty = auto-detect
    priority=number      # "number" (issue # asc) or comma-separated backlog file paths
+   mode=sequential      # sequential | wave  (wave = parallel; see docs/ORCHESTRATION.md)
+   concurrency=1        # max issues implemented at once in wave mode; merges still serialize
+   gates=verify         # comma list: verify,lint,typecheck,review,cleanup — run before merge
    trailer=Co-Authored-By: Claude <noreply@anthropic.com>
    -->
    ```
@@ -128,6 +131,23 @@ Runs only when set up and `state=RUN`. Mirrors the two-agent tick, driven by con
 > after a mutation — re-check, or confirm a specific issue with the authoritative `gh issue
 > view <n>`. Hold the Control Tower issue number in-session after scaffolding rather than
 > re-detecting it in the same run.
+
+### Wave mode & quality gates (opt-in — see docs/ORCHESTRATION.md)
+Config `mode`, `concurrency`, and `gates` tune how much of the iteration runs at once and how
+hard the merge gate is. Defaults (`sequential`, `1`, `verify`) = the plain one-issue tick below.
+
+- **`mode=wave`.** Instead of "do ONE" issue, compute the **wave** = every `loop:ready` issue
+  whose `blocked on #N` predecessors are all merged. Process up to `concurrency` of them
+  **concurrently**, each worker (local Codex or Claude) in its **own worktree**. **Implement in
+  parallel, merge in series:** serialize pushes to the default branch (rebase-and-retry) so
+  workers never race `main`. Remove each worktree after. Then log a wave summary.
+- **`gates`.** Before merging/closing ANY issue (Codex PR in step 1, or wave/sequential work),
+  run the configured gates in order: `verify` (the `verify` cmd + Verification Plan) → `lint` →
+  `typecheck` → `review` (an **independent verifier/reviewer subagent** — e.g. the
+  `code-reviewer` agent or `/code-review` — judges the diff against acceptance criteria
+  adversarially; blocking findings bounce) → `cleanup` (optional `/simplify` pass). A failing
+  gate **bounces** the issue (Codex: `--resume` once then `needs:human`; Claude: fix in place).
+  Gate subagents return a compact `pass`/`bounce` verdict, not the full diff, to save context.
 
 ### Guard (first, every iteration — non-negotiable)
 - **PAUSE.** If config `state=PAUSE`: post nothing, say "paused", and **halt**. Under

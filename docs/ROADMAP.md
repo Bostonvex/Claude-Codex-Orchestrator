@@ -37,6 +37,16 @@ Blocked until:
 - [ ] Prove stop/park conditions hold unattended (extended Phase 1/2 dry run first).
 - [ ] Explicit user sign-off.
 
+## Phase 3.5 — wave orchestration & quality gates
+**Goal: parallelize independent work and harden the merge gate** (reimplemented from
+[barkain/claude-code-workflow-orchestration](https://github.com/barkain/claude-code-workflow-orchestration);
+see [ORCHESTRATION.md](ORCHESTRATION.md)). All opt-in; defaults unchanged.
+- [x] Design + config keys (`mode`, `concurrency`, `gates`) + skill wiring.
+- [ ] Validate `mode=wave` live: parallel worktrees, serialized merges, no `main` races.
+- [ ] Validate the `review` gate: independent verifier subagent bounces a bad diff.
+- [ ] Optional `wave:N` labels + in-session Tasks mirror for progress.
+- [ ] Decide `concurrency` ceiling + cost guard for parallel local Codex.
+
 ## Phase 4 — hardening
 - [ ] Structured tick metrics on the Control Tower issue (throughput, bounce rate, parked
       count over time).

@@ -32,6 +32,7 @@ codex-loop closes that gap, in **whatever repo you invoke it from** — it hardc
 - [The autonomous loop](#the-autonomous-loop) — how restarts are eliminated
 - [Guardrails](#guardrails)
 - [Layout & scope](#layout--scope)
+- [Wave orchestration & quality gates](docs/ORCHESTRATION.md) — opt-in parallelism + gate pipeline
 
 > **See it end to end:** [docs/EXAMPLE-CYCLE.md](docs/EXAMPLE-CYCLE.md) walks one feature from
 > a plan → assigned/chained issues → loop iterations → drain, with the actual comments and
@@ -172,6 +173,9 @@ worker=local
 deploy=
 verify=
 priority=number
+mode=sequential
+concurrency=1
+gates=verify
 trailer=Co-Authored-By: Claude <noreply@anthropic.com>
 -->
 ```
@@ -183,6 +187,9 @@ trailer=Co-Authored-By: Claude <noreply@anthropic.com>
 | `deploy` | shell command | *(empty)* | Deploy command. **Empty = never deploy.** Runs only when set **and** the issue's Deployment Expectation asks. |
 | `verify` | shell command(s) | *(empty)* | CI / verification command. **Empty = auto-detect** (`npm ci && npm test`, `pytest`, etc. from the repo). |
 | `priority` | `number` \| file paths | `number` | Queue order. `number` = issue number ascending; or a comma-separated list of backlog file paths to read in order. |
+| `mode` | `sequential` \| `wave` | `sequential` | `wave` processes the whole ready set in parallel (up to `concurrency`); `sequential` does one issue per tick. See [Wave orchestration](docs/ORCHESTRATION.md). |
+| `concurrency` | integer ≥ 1 | `1` | Max issues implemented at once in wave mode. Merges still serialize onto the default branch. |
+| `gates` | `verify,lint,typecheck,review,cleanup` | `verify` | Quality gates run before every merge; a failing gate bounces the issue. `review` spawns an independent verifier/reviewer subagent. |
 | `trailer` | text | `Co-Authored-By: Claude …` | Trailer appended to every commit message the loop makes. |
 
 ---
@@ -332,6 +339,8 @@ codex-loop/
 ├── docs/
 │   ├── DESIGN.md            ← stall points, detect→scaffold→iterate→pace, guardrails
 │   ├── ISSUE-PROTOCOL.md    ← labels + LOOP:* grammar + Control Tower config = the state machine
+│   ├── ORCHESTRATION.md     ← opt-in parallel waves + quality gates (reimplemented from barkain)
+│   ├── EXAMPLE-CYCLE.md     ← full worked example: plan → issues → loop → drain
 │   ├── INSTALL.md           ← global install, first-run scaffolding, running the loop
 │   └── ROADMAP.md           ← phased plan
 └── skills/codex-loop/SKILL.md   ← the invocable /codex-loop orchestrator
