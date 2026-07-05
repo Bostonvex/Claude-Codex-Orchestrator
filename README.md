@@ -1,5 +1,9 @@
 # codex-loop
 
+> **In one line:** codex-loop turns Claude Code into a self-running build loop — it hands
+> coding tasks to Codex, then verifies, merges, and ships them, tracks everything in GitHub
+> issues, and re-paces itself so no one ever has to "kick the loop" again — in any repo.
+
 A **repo-agnostic** orchestration engine that lets **Claude Code control the work handed to
 Codex** — using **GitHub issues as the single source of truth for state and tracking** — and
 **eliminates the manual "kick the loop again" step**.
