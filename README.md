@@ -55,8 +55,10 @@ codex-loop/
 
 ## Status
 
-Design + skill draft. The skill is authored here but **must be installed into the repo it
-drives** (a Claude skill is only invocable from `<target-repo>/.claude/skills/`). See
+Design + skill draft. The skill is installed **globally** as a personal skill
+(`~/.claude/skills/codex-loop` → this repo), so `/codex-loop` is invocable from any project;
+because it's global it **checks its target first** and only runs against `Bostonvex/auspicia`
+(or another repo you explicitly point it at that provides the same contract). See
 [docs/INSTALL.md](docs/INSTALL.md).
 
 ## Relationship to auspicia

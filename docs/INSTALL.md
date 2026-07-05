@@ -1,30 +1,38 @@
 # Install & run
 
-A Claude Code skill is only invocable from `<target-repo>/.claude/skills/`. This repo is
-where the skill is *authored and versioned*; to actually run `/codex-loop` against auspicia,
-the skill has to be present in the auspicia checkout.
+A Claude Code skill is invocable either **globally** (from `~/.claude/skills/`, available in
+every project) or **per-repo** (from `<target-repo>/.claude/skills/`). This repo is where the
+skill is *authored and versioned* — prefer a symlink so edits here take effect immediately.
 
-## 1. Install the skill into the target repo
+## 1. Install the skill
 
-Pick one. **Symlink** keeps a single source of truth (edit here, runs there); **copy** is a
-vendored snapshot.
+### Global (personal skill — recommended, current setup)
 
 ```bash
-# from the auspicia checkout root
-TARGET="$HOME/Code/AnlayticsFrontend"       # the auspicia working copy
-SRC="$HOME/Code/codex-loop/skills/codex-loop"
-
-mkdir -p "$TARGET/.claude/skills"
-
-# Option A — symlink (live edits)
-ln -s "$SRC" "$TARGET/.claude/skills/codex-loop"
-
-# Option B — copy (vendored snapshot)
-cp -R "$SRC" "$TARGET/.claude/skills/codex-loop"
+mkdir -p "$HOME/.claude/skills"
+ln -sfn "$HOME/Code/codex-loop/skills/codex-loop" "$HOME/.claude/skills/codex-loop"
 ```
 
-Restart / reopen the Claude Code session in the target repo so it picks up the new skill.
-`/codex-loop` should now appear in the skills list.
+`/codex-loop` is now invocable from any repo. **Because it is global, the skill checks its
+target first** (see the skill's "Applicability" section): it only runs the iteration when the
+working repo is `Bostonvex/auspicia` — or another repo you explicitly point it at that
+provides the same Control Tower issue + `agent:*`/`loop:ready` labels + `LOOP:*` comment
+grammar. Invoked anywhere else it is a no-op with an explanation, not a wrong-repo action.
+
+### Per-repo (scoped alternative)
+
+Use this instead if you want it only in one checkout. **Symlink** keeps a single source of
+truth; **copy** is a vendored snapshot.
+
+```bash
+TARGET="$HOME/Code/AnlayticsFrontend"       # the auspicia working copy
+SRC="$HOME/Code/codex-loop/skills/codex-loop"
+mkdir -p "$TARGET/.claude/skills"
+ln -s "$SRC" "$TARGET/.claude/skills/codex-loop"     # or: cp -R "$SRC" "$TARGET/.claude/skills/codex-loop"
+```
+
+Reopen the Claude Code session so it picks up the new skill; `/codex-loop` should appear in
+the skills list.
 
 ## 2. Preconditions
 

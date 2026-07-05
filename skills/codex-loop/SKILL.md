@@ -20,6 +20,20 @@ You do all **frontend** work; you **verify / merge / deploy ALL** work (yours an
 backend PRs). You are the **sole merger and deployer**. Codex only implements assigned
 backend and returns work for you to verify.
 
+## Applicability — check FIRST (this is a global skill)
+
+This skill is installed personally (`~/.claude/skills/`) so it is invocable from any repo,
+but it currently targets **one loop: `Bostonvex/auspicia`** (Control Tower issue #175,
+`scripts/deploy-vps.sh`, the `IRIS-BACKLOG`/`PRODUCT-ROADMAP` priority order). Before doing
+anything:
+
+- Confirm the working repo is `Bostonvex/auspicia` (`gh repo view --json nameWithOwner`).
+- If it is **not** auspicia: do not run the iteration. Say the skill targets the auspicia
+  loop and stop — unless the user has pointed it at another repo that provides the same
+  contract (a Control Tower issue with `LOOP:STATE`, the `agent:codex`/`agent:claude` +
+  `loop:ready` label scheme, and the `LOOP:*` comment grammar). Treat repo, Control Tower
+  issue number, and deploy command as the parameters to confirm, not constants to assume.
+
 ## Preflight (once, at the start of an iteration)
 
 1. `git fetch origin`.
