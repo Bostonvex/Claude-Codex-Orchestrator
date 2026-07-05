@@ -364,6 +364,18 @@ check runs before any assign/merge/deploy, by construction.
 
 ---
 
+## Acknowledgements
+
+codex-loop's wave orchestration, plan-intake decomposition, specialized-persona routing, and
+quality-gate ideas were influenced by
+[`barkain/claude-code-workflow-orchestration`](https://github.com/barkain/claude-code-workflow-orchestration).
+This repo reimplements those ideas from scratch for a GitHub-issue-driven Claude/Codex loop;
+no code or prompts from that project are copied or vendored. The detailed attribution lives in
+[docs/ORCHESTRATION.md](docs/ORCHESTRATION.md#scope--attribution) and
+[docs/PERSONAS.md](docs/PERSONAS.md#scope--attribution).
+
+---
+
 ## Layout & scope
 
 ![codex-loop layout and scope infographic](docs/assets/layout-scope.svg)
