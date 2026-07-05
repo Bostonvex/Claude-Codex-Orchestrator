@@ -102,7 +102,7 @@ Creating issues is outward, so **confirm-first**:
    orchestration, and glue you'll implement yourself → `agent:claude`.
 3. **Order it.** Determine dependencies. The first unit in a chain is `loop:ready`; each
    dependent is `loop:blocked` with the blocker named in its body (e.g. "blocked on #NN").
-   The loop clears `loop:blocked` automatically as predecessors merge.
+   The loop unblocks each successor as its predecessor merges (swap `loop:blocked` → `loop:ready`).
 4. **Freeze each `agent:codex` contract** in the issue body — pin types, API shape, migration
    id, and acceptance criteria — so it is assignable the moment it becomes ready.
 5. **Confirm, then create.** Show the proposed issue list (title, owner, labels, blocked-on,
@@ -116,6 +116,18 @@ A normal `/codex-loop` (or `/loop /codex-loop`) then runs them to drain.
 ## Phase C — One iteration
 
 Runs only when set up and `state=RUN`. Mirrors the two-agent tick, driven by config.
+
+> **"Unblock" means a label swap, not a removal.** To unblock a chain successor, `gh issue
+> edit <n> --remove-label loop:blocked --add-label loop:ready`. Removing `loop:blocked` alone
+> is **not** enough — the pickup queries filter on `loop:ready`, so a successor without it is
+> invisible to the loop.
+>
+> **Consistency caveat.** `gh issue list --label …` is eventually consistent and can lag a
+> label/state change you *just* made by a few seconds. So: trust your in-session knowledge over
+> an immediate re-query; don't declare "queue drained" or "not set up" from a single list right
+> after a mutation — re-check, or confirm a specific issue with the authoritative `gh issue
+> view <n>`. Hold the Control Tower issue number in-session after scaffolding rather than
+> re-detecting it in the same run.
 
 ### Guard (first, every iteration — non-negotiable)
 - **PAUSE.** If config `state=PAUSE`: post nothing, say "paused", and **halt**. Under
@@ -136,7 +148,8 @@ Find issues whose newest comment is `LOOP:STATUS … state=pr-open` with no late
   repo) **and** the issue's own Verification Plan; review the diff against its Acceptance
   Criteria; `git checkout -`.
 - **Pass →** `gh pr merge <n> --squash`; post `<!-- LOOP:VERIFY issue=NN pr=### verdict=pass -->`
-  + the six-heading comment; close the issue; remove `loop:blocked` from its chain successor.
+  + the six-heading comment; close the issue; **unblock** its chain successor (swap
+  `loop:blocked` → `loop:ready`).
 - **Fail →** do NOT merge; post `<!-- LOOP:VERIFY issue=NN pr=### verdict=bounce -->` with
   specific reproducible findings; leave it `agent:codex loop:ready`. Two consecutive bounces
   on one issue → relabel `needs:human`.

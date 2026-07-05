@@ -1,8 +1,9 @@
 # codex-loop
 
-> **In one line:** codex-loop turns Claude Code into a self-running build loop — it hands
-> coding tasks to Codex, then verifies, merges, and ships them, tracks everything in GitHub
-> issues, and re-paces itself so no one ever has to "kick the loop" again — in any repo.
+> **In one line:** codex-loop turns Claude Code into a self-running build loop in any repo. It
+> splits the backlog between Claude and Codex — Claude also orchestrates, verifying, merging,
+> and shipping the work — with every task tracked as a GitHub issue. The loop paces itself, so
+> the only reason to kick it by hand is to start the next round sooner than its timer would fire.
 
 A **repo-agnostic** orchestration engine that lets **Claude Code control the work handed to
 Codex** — using **GitHub issues as the single source of truth for state and tracking** — and
@@ -196,7 +197,7 @@ The skill creates these on first run. They are intrinsic to codex-loop, not to a
 | `agent:codex` | This issue's work belongs to **Codex**. |
 | `agent:claude` | This issue's work belongs to **Claude** (implemented directly). |
 | `loop:ready` | Actionable now — eligible to be picked up this tick. |
-| `loop:blocked` | Gated on a predecessor; not yet actionable. Auto-cleared when the predecessor merges. |
+| `loop:blocked` | Gated on a predecessor; not yet actionable. Swapped to `loop:ready` when the predecessor merges. |
 | `needs:human` | **Parked.** The loop must not act — a human decides. |
 | `worker:*` | *(hybrid mode only)* Tag an issue `worker:local` or `worker:cloud` to route it to that Codex surface. |
 

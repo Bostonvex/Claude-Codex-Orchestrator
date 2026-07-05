@@ -132,7 +132,9 @@ verify:   #12 has LOOP:STATUS state=pr-open pr=41, no later LOOP:VERIFY → veri
               gh pr merge 41 --squash
               comment #12: <!-- LOOP:VERIFY issue=12 pr=41 verdict=pass -->  + six headings
               close #12
-              unblock chain: remove loop:blocked from #13 and #14 → both now loop:ready
+              unblock chain: swap #13 and #14 from loop:blocked → loop:ready
+                (--remove-label loop:blocked --add-label loop:ready; removing alone
+                 wouldn't make them match the loop:ready pickup query)
 codex:    next agent:codex loop:ready = #14. Freeze already done → activate Codex:
               <!-- LOOP:ASSIGN agent=codex issue=14 contract=frozen -->
 claude:   agent:claude loop:ready = #13 → implement directly:
