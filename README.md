@@ -5,6 +5,8 @@
 > and shipping the work — with every task tracked as a GitHub issue. The loop paces itself, so
 > the only reason to kick it by hand is to start the next round sooner than its timer would fire.
 
+![codex-loop orchestration infographic](docs/assets/codex-loop-infographic.png)
+
 A **repo-agnostic** orchestration engine that lets **Claude Code control the work handed to
 Codex** — using **GitHub issues as the single source of truth for state and tracking** — and
 **eliminates the manual "kick the loop again" step**.
