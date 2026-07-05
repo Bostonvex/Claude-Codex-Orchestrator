@@ -123,7 +123,7 @@ The skill creates these on first run. They are intrinsic to codex-loop, not to a
 | `loop:ready` | Actionable now — eligible to be picked up this tick. |
 | `loop:blocked` | Gated on a predecessor; not yet actionable. Auto-cleared when the predecessor merges. |
 | `needs:human` | **Parked.** The loop must not act — a human decides. |
-| `worker:local` / `worker:cloud` | *(hybrid mode only)* Which Codex surface handles this specific issue. |
+| `worker:*` | *(hybrid mode only)* Tag an issue `worker:local` or `worker:cloud` to route it to that Codex surface. |
 
 ---
 
