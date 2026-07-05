@@ -49,7 +49,7 @@ codex-loop closes that gap, in **whatever repo you invoke it from** — it hardc
 | **`gh` CLI**, authenticated | everything | All state operations — create issues/labels, read comments, checkout/merge PRs. `gh auth status` must show the target repo's host. |
 | **`git`** | everything | Worktrees, commits, push to the default branch. |
 | **`/loop`** (built-in skill) | autonomous mode | Only needed for `/loop /codex-loop`. A bare `/codex-loop` runs one tick without it. |
-| **`codex` CLI + plugin**, authenticated | `worker=local` (**default**) & `hybrid` | Verify with `/codex:setup`. The plugin shells out to **Node.js** (`codex app-server`), so Node must be on PATH. Not needed if you run `worker=cloud`. |
+| **`codex` CLI + plugin**, authenticated | `worker=local` (**default**) & `hybrid` | Verify with `/codex:setup`. The plugin shells out to **Node.js** (`codex app-server`), so Node must be on PATH. Codex work bills to the **CLI's own auth** (ChatGPT/Codex subscription, or an OpenAI API key) — **not** Claude/Anthropic tokens. Not needed if you run `worker=cloud`. |
 | **Node.js** | `worker=local` / `hybrid` | Transitive — the codex plugin's runtime is a Node script. |
 | **Codex Cloud agent** wired to the repo | `worker=cloud` only | External setup in ChatGPT/Codex Cloud: GitHub access to the repo + the `agent:codex loop:ready` label in its watch scope. The skill does not create this. |
 | A working **CI/verify command** | verification | Auto-detected (`npm`, `pytest`, …) or set via the `verify` config key. |

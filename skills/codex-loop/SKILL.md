@@ -164,10 +164,16 @@ Route by config `worker`:
   later iteration verifies (step 1).
 - **local** (or `worker:local` in hybrid): cut a fresh worktree off the default branch; hand
   the frozen contract to the **`codex:codex-rescue`** subagent with `--write` (one `task`
-  call — it is a thin forwarder); run the `verify` command + the issue's Verification Plan in
-  the worktree. Pass → commit (with config `trailer`) → push to the default branch → close →
-  unblock successor. Fail → re-hand once via `--resume` with findings; second fail →
-  `needs:human`.
+  call — it is a thin forwarder). **Point Codex at the worktree explicitly:** the subagent runs
+  the companion in the *session's* cwd, not the worktree, so include the worktree path in the
+  task via the companion's `-C <worktree>` (aka `--cwd`) flag — otherwise Codex edits the
+  wrong repo. (`--write` maps to Codex's `workspace-write` sandbox.) Then **independently
+  verify**: run the `verify` command + the issue's Verification Plan in the worktree yourself
+  (don't rely on Codex's own test run). Pass → commit (with config `trailer`) → push to the
+  default branch → close → unblock successor → `git worktree remove` the worktree. Fail →
+  re-hand once via `--resume` with findings; second fail → `needs:human`.
+  Local Codex runs under your local `codex` CLI's own auth (ChatGPT/Codex subscription, or an
+  OpenAI API key) — not Claude/Anthropic tokens.
 
 ### 3. Claude-owned work — implement one directly
 Sync to the default branch (`git fetch origin && git reset --hard origin/<default>`). Take
