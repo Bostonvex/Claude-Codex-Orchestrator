@@ -58,13 +58,27 @@ Phase C, mode=wave, concurrency=K:
   5. Pace  (unchanged)
 ```
 
-Two hard rules that keep parallelism safe:
+Three hard rules that keep parallelism safe (all three **validated live** — see the note below):
 
 - **Implement in parallel, merge in series.** Multiple worktrees can *build* at once, but
   pushes to the default branch are serialized (rebase-and-retry) so two workers never race
   the branch. This is why `concurrency` speeds up implementation without corrupting `main`.
-- **Isolation per worker.** Each concurrent worker gets a fresh worktree off the current
-  default branch — no shared working tree, no cross-talk. Worktrees are removed after.
+- **Re-verify after rebase; never push a conflicted or red tree.** When worker N rebases onto
+  the branch that worker N-1 just advanced, the rebase can **conflict** (two issues touched the
+  same file). Recovery: re-apply that issue's change on the fresh base — for a well-specified
+  issue, re-running its implementer on top of the updated `main` is clean — then **re-run the
+  gates** before pushing. A conflicted/failing tree is never pushed.
+- **Independence = no dependency *and* no file overlap.** Two issues with no `blocked on` link
+  can still collide if they edit the same files. Prefer to co-schedule issues that touch
+  disjoint areas; when overlap is likely or unknown, drop `concurrency` to 1 for that group and
+  let the merge-in-series + re-verify rule handle it. Isolation is per worker: each gets a fresh
+  worktree off the current default branch, removed after.
+
+> **Validated 2026-07-05** against a scratch repo: two issues (`clamp`, `slugify`) implemented
+> concurrently in separate worktrees — one by local Codex, one by Claude. Serialized merge:
+> #7 landed first; #8's rebase **conflicted** (both appended to `src/index.js`), so it was
+> re-applied on the updated `main` and re-verified — both landed, `main` green (7/7), no race.
+> The conflict is exactly why the re-verify rule exists.
 
 ---
 

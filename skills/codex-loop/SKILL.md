@@ -28,6 +28,13 @@ order) is read from the **Control Tower issue's config block**, and created on f
 
 ## Phase A — Detect target state (ALWAYS run first)
 
+**`/codex-loop --check` (dry mode):** run this whole detection phase, then **validate the config
+block and stop** — do not run an iteration. Report: unknown/misspelled config keys; invalid
+values (`state`∉{RUN,PAUSE}, `worker`∉{local,cloud,hybrid}, `mode`∉{sequential,wave},
+`concurrency` not a positive integer, `gates` tokens ∉ the known set); the effective worker's
+dependency (codex CLI for local/hybrid); and whether the label set + Control Tower exist. This
+is the safe way to preview a repo's setup without touching anything.
+
 Do this before any loop work, every invocation:
 
 1. **Check dependencies.** `gh auth status` (must be authed for this repo's host) and `git`
@@ -156,7 +163,15 @@ hard the merge gate is. Defaults (`sequential`, `1`, `verify`) = the plain one-i
   whose `blocked on #N` predecessors are all merged. Process up to `concurrency` of them
   **concurrently**, each worker (local Codex or Claude) in its **own worktree**. **Implement in
   parallel, merge in series:** serialize pushes to the default branch (rebase-and-retry) so
-  workers never race `main`. Remove each worktree after. Then log a wave summary.
+  workers never race `main`. **If a rebase conflicts** (two issues touched the same file),
+  re-apply that issue on the freshly-updated base — re-running its implementer on top of `main`
+  is clean for a well-specified issue — and **re-run the gates**; never push a conflicted or red
+  tree. Independence means *no dependency **and** no likely file overlap* — co-schedule issues
+  that touch disjoint areas; if overlap is likely, treat them as `concurrency=1`. Remove each
+  worktree after. Then log a wave summary. **Cap the fan-out:** never exceed config
+  `concurrency`, and clamp it to a sane ceiling (≈ CPU cores − 2) — each `worker=local` worker
+  is a full Codex run on the user's machine, so respect the cost/max-iterations backstop before
+  widening a wave.
 - **`gates`.** Before merging/closing ANY issue (Codex PR in step 1, or wave/sequential work),
   run the configured gates in order: `verify` (the `verify` cmd + Verification Plan) → `lint` →
   `typecheck` → `review` (an **independent verifier/reviewer subagent** — e.g. the
@@ -228,6 +243,17 @@ Append one comment to the Control Tower issue: queue counts (ready/blocked/parke
 what you assigned / verified / merged / deployed, blockers, anything newly parked. Every
 issue comment leads with its `LOOP:*` marker, followed by the six headings: Current State /
 Changed / Verification / Deployment / Risks-Unknowns / Next Recommended Step.
+
+Lead the comment with a **machine-readable metrics line** so throughput/bounce/parked can be
+tracked over time by grepping the Control Tower history:
+```
+<!-- LOOP:METRICS tick=<n> ready=<r> blocked=<b> parked=<p> merged=<m> bounced=<x> deployed=<d> -->
+```
+
+**Alerting.** When the loop **parks** an issue (`needs:human`) or **halts on red CI**, make it
+loud, don't just log it: send a `PushNotification` (if available) and open/label a `needs:human`
+comment on the Control Tower issue naming the issue and the reason. Silent parking is the
+failure mode to avoid — a parked queue that no one notices looks the same as a drained one.
 
 ---
 

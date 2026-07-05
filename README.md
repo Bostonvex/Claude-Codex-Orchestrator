@@ -344,8 +344,9 @@ codex-loop/
 │   ├── PERSONAS.md          ← specialized agent personas + how they're selected/dispatched
 │   ├── EXAMPLE-CYCLE.md     ← full worked example: plan → issues → loop → drain
 │   ├── INSTALL.md           ← global install, first-run scaffolding, running the loop
-│   └── ROADMAP.md           ← phased plan
-└── skills/codex-loop/SKILL.md   ← the invocable /codex-loop orchestrator
+│   └── ROADMAP.md           ← phased plan (validation evidence per item)
+├── skills/codex-loop/SKILL.md   ← the invocable /codex-loop orchestrator
+└── workflows/verify-fanout.mjs  ← deterministic parallel PR verification (Workflow asset)
 ```
 
 The skill contains no project-specific code. Everything a given repo needs — deploy command,

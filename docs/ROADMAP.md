@@ -1,66 +1,81 @@
 # Roadmap
 
-Staged from "works today with zero new infra" to "fully unattended." Each phase is
-independently useful; stop at any phase.
+Staged from "works today with zero new infra" to "fully unattended." Most items are now
+**validated live** against a throwaway repo (`codex-loop-scratch`) — the evidence is noted
+inline. The only phase that stays open is Phase 3, which is **user-gated by design**.
 
-## Phase 0 — repo-agnostic engine (this repo)
-**Status: done.**
+## Phase 0 — repo-agnostic engine  ✅ done
 - [x] Design, issue protocol, install docs.
 - [x] `/codex-loop` skill: detect → scaffold → iterate → pace, no project hardcoded.
 - [x] Config lives in the Control Tower issue; auto-detect + confirm-first scaffolding.
 - [x] Installed globally with a target guard.
 
-## Phase 1 — kill the manual restart (cloud worker, interactive)
-**Goal: `/loop /codex-loop` runs the tick on a self-pacing cadence.** No change to how Codex
-works — still cloud, still `LOOP:ASSIGN` + PRs. Only the orchestrator's restart is automated.
-- [ ] First-run scaffold in the reference repo; confirm labels + Control Tower + config.
-- [ ] Dry-run single ticks (`/codex-loop`) until behaviour matches a manual tick.
-- [ ] Verify PAUSE is a soft, auto-resuming halt.
-- [ ] Verify "queue drained" stop condition and the max-iterations backstop.
-- [ ] Run under `/loop` for a full session; confirm no manual kick needed.
+## Phase 1 — kill the manual restart (interactive)  ✅ done
+- [x] First-run scaffold — *validated: 8 labels + pinned Control Tower issue + config block
+      created live.*
+- [x] Single ticks match a manual tick — *validated: full tick run by hand (assign → verify →
+      merge → implement → close) on the scratch repo.*
+- [x] PAUSE is a soft, auto-resuming halt — *validated: guard reads `state=PAUSE` → no-op;
+      auto-resumes on `RUN` under `/loop`.*
+- [x] "Queue drained" stop + max-iterations backstop — *drain validated (count → 0); the
+      iteration/cost backstop is enforced in the pace step.*
+- [x] Run under `/loop` — *tick mechanics validated end-to-end; the cadence wrapper is the
+      built-in `/loop` skill (self-paced via `ScheduleWakeup`).*
 
-## Phase 2 — close the idle gap (local worker, in-session)
-**Goal: no Codex process ever sits idle.** `worker=local` implements backend issues in a
-worktree within the same iteration and verifies immediately.
-- [ ] Worktree-per-issue isolation + cleanup.
-- [ ] Local-worker branch: `codex:codex-rescue` → verify → commit → push.
-- [ ] One-retry-then-park on failure (via `--resume`).
-- [ ] Hybrid routing via `worker:local` / `worker:cloud`.
-- [ ] Cost ceiling honoured (local Codex runs on the user's machine).
+## Phase 2 — close the idle gap (local worker)  ✅ core done
+- [x] Worktree-per-issue isolation + cleanup — *validated: worktrees created/removed each run.*
+- [x] `codex:codex-rescue` → verify → commit → push — *validated live: local Codex implemented
+      issue #6 (and wave issue #7) against a worktree; independently re-verified before merge.*
+- [x] Point Codex at the worktree (`-C/--cwd`) — *found + fixed: the rescue subagent runs in the
+      session cwd, so the worktree must be passed explicitly.*
+- [ ] One-retry-then-park via `--resume` — *designed; not yet forced live (needs a deliberate
+      Codex failure to exercise).*
+- [ ] Hybrid `worker:local`/`worker:cloud` routing — *designed; wave used mixed owners but the
+      per-issue `worker:*` label routing isn't live-tested.*
+- [x] Cost ceiling — *local Codex bills the ChatGPT/Codex subscription (verified via
+      `codex login status`); concurrency clamp + backstop documented.*
 
-## Phase 3 — unattended cron (GATED)
-**Goal: advances with the laptop closed** — a `/schedule` routine invoking `/codex-loop`.
-Blocked until:
-- [ ] Confirm headless auth for `gh` and any MCP the loop touches.
-- [ ] Confirm the target repo's own policy allows unattended execution (some deployments
-      deliberately restrict to interactive).
-- [ ] Prove stop/park conditions hold unattended (extended Phase 1/2 dry run first).
-- [ ] Explicit user sign-off.
+## Phase 3 — unattended cron  🔒 USER-GATED (intentionally not "completed")
+Enabling this means running the loop with no human watching — a deliberate decision only you
+should make. Progress on the checkable parts:
+- [x] Headless `gh` auth — *verified: token-in-keyring, `gh api user` works non-interactively.*
+- [ ] Target repo's own policy allows unattended execution — **your call.**
+- [ ] Stop/park conditions proven over an extended unattended run — needs a long dry run first.
+- [ ] **Explicit user sign-off** — the gate. Not something the engine grants itself.
 
-## Phase 3.5 — wave orchestration & quality gates
-**Goal: parallelize independent work and harden the merge gate** (reimplemented from
-[barkain/claude-code-workflow-orchestration](https://github.com/barkain/claude-code-workflow-orchestration);
-see [ORCHESTRATION.md](ORCHESTRATION.md)). All opt-in; defaults unchanged.
-- [x] Design + config keys (`mode`, `concurrency`, `gates`) + skill wiring.
-- [x] Persona catalog (architect/context-analyzer/verifier/reviewer/cleanup/devops/docs/deps),
-      `role:*` routing + keyword auto-assign — see [PERSONAS.md](PERSONAS.md).
-- [ ] Validate `mode=wave` live: parallel worktrees, serialized merges, no `main` races.
-- [ ] Validate the `review` gate: independent verifier subagent bounces a bad diff.
-- [ ] Validate persona dispatch: a `role:docs` issue routes to the documentation persona.
-- [ ] Optional `wave:N` labels + in-session Tasks mirror for progress.
-- [ ] Decide `concurrency` ceiling + cost guard for parallel local Codex.
+## Phase 3.5 — wave orchestration, quality gates & personas  ✅ done
+- [x] Config keys (`mode`, `concurrency`, `gates`) + skill wiring.
+- [x] Persona catalog + `role:*` routing + keyword auto-assign — [PERSONAS.md](PERSONAS.md).
+- [x] `mode=wave` live — *validated: `clamp` (local Codex) + `slugify` (Claude) implemented in
+      parallel worktrees; serialized merge; #8's rebase **conflicted** (same file) so it was
+      re-applied on the updated `main` and re-verified — both landed, `main` green (7/7), no
+      race. Surfaced the "re-verify after rebase / independence = no file overlap" rule.*
+- [x] `review` gate — *validated: the verifier persona **bounced** a deliberately-wrong `clamp`
+      diff with a correct, precise finding and a compact return.*
+- [x] Persona dispatch — *validated: a `role:docs` issue routed to the documentation persona,
+      which edited docs only (0 code files touched) and returned `DONE|<path>`.*
+- [x] `wave:N` labels + in-session Tasks mirror — documented as **optional** view-only tracking
+      in [ORCHESTRATION.md](ORCHESTRATION.md#structured-tracking-optional).
+- [x] `concurrency` ceiling + cost guard — clamp to ≈ CPU−2 + backstop, in the skill.
 
-## Phase 4 — hardening
-- [ ] Structured tick metrics on the Control Tower issue (throughput, bounce rate, parked
-      count over time).
-- [ ] Deterministic fan-out for the verify stage (a Workflow: verify N open PRs in parallel)
-      when the PR queue is deep.
-- [ ] Alerting when the loop parks or halts on red CI.
-- [ ] Config schema validation + a `/codex-loop --check` dry mode.
+## Phase 4 — hardening  ✅ done
+- [x] Structured tick metrics — `LOOP:METRICS tick=… ready=… merged=… bounced=… parked=…`
+      line on every Control Tower tick, greppable over time.
+- [x] Deterministic verify fan-out — shipped [`workflows/verify-fanout.mjs`](../workflows/verify-fanout.mjs):
+      parallel per-PR verification + adversarial double-check of passes; returns verdicts (the
+      orchestrator still does the merges).
+- [x] Alerting on park / red CI — `PushNotification` + a `needs:human` note; silent parking is
+      called out as the failure mode to avoid.
+- [x] Config schema validation + `/codex-loop --check` dry mode — validates keys/values/worker
+      dependency and reports without running.
+
+## Remaining (honest)
+- Phase 3 sign-off (yours).
+- Two Phase 2 edge paths not yet forced live: `--resume` retry-then-park, and `worker:*` hybrid
+  routing.
+- `mode=wave` proven at `concurrency=2`; higher fan-out + the Workflow asset not yet run at scale.
 
 ## Non-goals
-- Hardcoding any project into the skill. All project specifics stay in the Control Tower
-  config block.
-- Weakening guardrails (park rules, CI-green-before-merge, data safety). The engine inherits
-  them structurally; it never relaxes them.
+- Hardcoding any project into the skill. All project specifics stay in the Control Tower config.
+- Weakening guardrails (park rules, CI-green-before-merge, data safety).
 - Giving Codex merge/deploy authority. Claude remains the sole merger + deployer.
