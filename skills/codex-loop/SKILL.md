@@ -132,6 +132,22 @@ Runs only when set up and `state=RUN`. Mirrors the two-agent tick, driven by con
 > view <n>`. Hold the Control Tower issue number in-session after scaffolding rather than
 > re-detecting it in the same run.
 
+### Personas — dispatch the right specialist (see docs/PERSONAS.md)
+Beyond the two base roles (Codex implements `agent:codex`, Claude implements `agent:claude`),
+dispatch **specialized personas** as isolated subagents, each with a tight brief, each
+returning a **compact result** (a `pass`/`bounce` verdict or `DONE|<scratchpad-path>`) — never
+a full diff, so a wide wave stays cheap.
+- **Intake:** *architect* (`Plan`) decomposes + freezes contracts; *context-analyzer*
+  (`Explore`) maps the area first. Auto-tag issues with `role:<persona>` by keyword
+  (design→architect, deploy/CI→devops, docs→documentation, upgrade/CVE→dependency); when
+  unsure, don't tag.
+- **Implement:** owner persona (*codex-implementer* via `codex:codex-rescue`, or
+  *claude-implementer*). If a `role:*` label is set, use that specialist's brief (e.g.
+  `role:devops` → devops persona owns deploy config + smoke checks).
+- **Gates:** *verifier* (`general-purpose`, adversarial vs acceptance criteria) + *reviewer*
+  (`/code-review`) run for the `review` gate; *cleanup* (`/simplify`) for the `cleanup` gate.
+`role:*` labels are created on demand, not by scaffolding.
+
 ### Wave mode & quality gates (opt-in — see docs/ORCHESTRATION.md)
 Config `mode`, `concurrency`, and `gates` tune how much of the iteration runs at once and how
 hard the merge gate is. Defaults (`sequential`, `1`, `verify`) = the plain one-issue tick below.

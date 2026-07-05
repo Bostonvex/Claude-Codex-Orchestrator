@@ -84,16 +84,23 @@ A per-issue pipeline that runs **before merge**. Configure which gates are activ
 Gate subagents return a compact verdict (`pass` / `bounce` + findings pointer), never the full
 diff, so a wide wave doesn't blow up the orchestrator's context.
 
-### Mapping their 8 agents → our gates/roles
+### Their 8 agents → our personas
 
-| Their agent | Here |
+Recreated as a full persona catalog with briefs, backings, and label-based routing — see
+**[PERSONAS.md](PERSONAS.md)**. Summary of the mapping:
+
+| Their agent | Our persona |
 |---|---|
-| tech-lead-architect | Phase B+ plan-mode decomposition |
-| codebase-context-analyzer | `Explore` agent during intake / review |
-| task-completion-verifier | the `review` gate's verifier subagent |
-| code-reviewer | the `review` gate (`code-reviewer` / `/code-review`) |
-| code-cleanup-optimizer | the `cleanup` gate (`/simplify`) |
-| documentation-expert / devops / dependency-manager | invoked on demand when an issue is tagged for that concern |
+| tech-lead-architect | **architect** (Plan / plan-mode; freezes contracts at intake) |
+| codebase-context-analyzer | **context-analyzer** (`Explore`) |
+| task-completion-verifier | **verifier** (the `review` gate, adversarial) |
+| code-reviewer | **reviewer** (`/code-review`) |
+| code-cleanup-optimizer | **cleanup** (`/simplify`) |
+| devops-experience-architect | **devops** (`role:devops`; owns deploy config + smoke checks) |
+| documentation-expert | **documentation** (`role:docs`) |
+| dependency-manager | **dependency** (`role:deps`; additive/safe bumps) |
+
+Selection is owner-first, then `role:*` label, then keyword auto-assign at intake.
 
 ---
 

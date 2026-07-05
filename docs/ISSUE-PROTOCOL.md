@@ -24,6 +24,7 @@ any repo reconstructs everything by reading issues.
 | `loop:blocked` | gated on a predecessor; not yet actionable |
 | `needs:human` | **parked** — the loop must not act; a human decides |
 | `worker:local` / `worker:cloud` | *(hybrid mode only)* which Codex surface handles it |
+| `role:<persona>` | *(optional, on-demand)* route to a specialist persona (e.g. `role:devops`, `role:docs`, `role:deps`, `role:architect`) — see [PERSONAS.md](PERSONAS.md) |
 
 These labels are intrinsic to codex-loop, not to any project. The skill creates them on
 first run (Phase B) if they're missing.

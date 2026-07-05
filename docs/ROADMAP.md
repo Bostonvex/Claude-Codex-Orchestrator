@@ -42,8 +42,11 @@ Blocked until:
 [barkain/claude-code-workflow-orchestration](https://github.com/barkain/claude-code-workflow-orchestration);
 see [ORCHESTRATION.md](ORCHESTRATION.md)). All opt-in; defaults unchanged.
 - [x] Design + config keys (`mode`, `concurrency`, `gates`) + skill wiring.
+- [x] Persona catalog (architect/context-analyzer/verifier/reviewer/cleanup/devops/docs/deps),
+      `role:*` routing + keyword auto-assign — see [PERSONAS.md](PERSONAS.md).
 - [ ] Validate `mode=wave` live: parallel worktrees, serialized merges, no `main` races.
 - [ ] Validate the `review` gate: independent verifier subagent bounces a bad diff.
+- [ ] Validate persona dispatch: a `role:docs` issue routes to the documentation persona.
 - [ ] Optional `wave:N` labels + in-session Tasks mirror for progress.
 - [ ] Decide `concurrency` ceiling + cost guard for parallel local Codex.
 

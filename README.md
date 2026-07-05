@@ -33,6 +33,7 @@ codex-loop closes that gap, in **whatever repo you invoke it from** — it hardc
 - [Guardrails](#guardrails)
 - [Layout & scope](#layout--scope)
 - [Wave orchestration & quality gates](docs/ORCHESTRATION.md) — opt-in parallelism + gate pipeline
+- [Agent personas](docs/PERSONAS.md) — specialized roles (architect, verifier, reviewer, devops…)
 
 > **See it end to end:** [docs/EXAMPLE-CYCLE.md](docs/EXAMPLE-CYCLE.md) walks one feature from
 > a plan → assigned/chained issues → loop iterations → drain, with the actual comments and
@@ -340,6 +341,7 @@ codex-loop/
 │   ├── DESIGN.md            ← stall points, detect→scaffold→iterate→pace, guardrails
 │   ├── ISSUE-PROTOCOL.md    ← labels + LOOP:* grammar + Control Tower config = the state machine
 │   ├── ORCHESTRATION.md     ← opt-in parallel waves + quality gates (reimplemented from barkain)
+│   ├── PERSONAS.md          ← specialized agent personas + how they're selected/dispatched
 │   ├── EXAMPLE-CYCLE.md     ← full worked example: plan → issues → loop → drain
 │   ├── INSTALL.md           ← global install, first-run scaffolding, running the loop
 │   └── ROADMAP.md           ← phased plan
