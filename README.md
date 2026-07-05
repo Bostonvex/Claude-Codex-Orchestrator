@@ -68,12 +68,22 @@ creates the [labels](#labels) and a pinned **Control Tower issue** seeded with a
 codex-loop has no bespoke CLI flags of its own — you drive it by *how you invoke the skill*.
 The tunable "options" live in the [config block](#configuration-options), not on the command.
 
-| Command | What it does |
-|---|---|
-| `/codex-loop` | Run **one iteration** and stop. On a fresh repo this is instead the **detect + scaffold** flow. Use it to dry-run and watch behaviour. |
-| `/loop /codex-loop` | **Autonomous, self-paced.** Each wake runs one iteration; the skill schedules the next itself (tight while a PR/deploy is in flight, back off when idle, halt when drained). This is the mode that **eliminates manual restarts**. |
-| `/loop 10m /codex-loop` | Fixed-interval alternative — a tick every 10 min regardless of state. Simpler but less efficient (burns empty ticks); prefer the self-paced form above. |
-| `/schedule … /codex-loop` | *(Future, gated.)* Unattended cron routine — runs with the session closed. Off by default; see [ROADMAP](docs/ROADMAP.md). |
+- **`/codex-loop`**
+  Run **one iteration** and stop. On a fresh repo this is instead the **detect + scaffold**
+  flow. Use it to dry-run and watch behaviour.
+
+- **`/loop /codex-loop`**
+  **Autonomous, self-paced.** Each wake runs one iteration; the skill schedules the next itself
+  (tight while a PR/deploy is in flight, back off when idle, halt when drained). This is the
+  mode that **eliminates manual restarts**.
+
+- **`/loop 10m /codex-loop`**
+  Fixed-interval alternative — a tick every 10 min regardless of state. Simpler but less
+  efficient (burns empty ticks); prefer the self-paced form above.
+
+- **`/schedule … /codex-loop`**
+  *(Future, gated.)* Unattended cron routine — runs with the session closed. Off by default;
+  see [ROADMAP](docs/ROADMAP.md).
 
 **Pausing / stopping**
 
