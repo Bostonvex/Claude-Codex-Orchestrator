@@ -30,8 +30,9 @@ order) is read from the **Control Tower issue's config block**, and created on f
 
 Do this before any loop work, every invocation:
 
-1. **Identify the repo:** `gh repo view --json nameWithOwner,url`. If not inside a GitHub
-   repo with `gh` authed, say so and stop.
+1. **Check dependencies.** `gh auth status` (must be authed for this repo's host) and `git`
+   present — if not, say what's missing and stop. Then `gh repo view --json nameWithOwner,url`;
+   if not inside a GitHub repo, say so and stop.
 2. **Find the Control Tower issue:** `gh issue list --label "codex-loop:control" --state open
    --json number,title,body`.
    - **0 results → NOT SET UP.** Go to **Phase B (Scaffold)**.
@@ -54,6 +55,11 @@ Do this before any loop work, every invocation:
    ```
    Any missing key falls back to the default shown above. `state` is authoritative for
    PAUSE. If a key's value is empty and needed, auto-detect (CI) or skip (deploy).
+5. **Check the worker's dependency.** If effective `worker` is `local` or `hybrid`, confirm the
+   `codex` CLI is installed and authenticated (run `/codex:setup` if unsure). If it isn't,
+   stop and tell the user to run `/codex:setup` or set `worker=cloud`. If `worker=cloud`,
+   note that Codex pickup depends on the externally-wired Codex Cloud agent (the skill only
+   posts the assignment).
 
 If set up and `state=RUN`, continue to **Phase C (Iterate)**.
 

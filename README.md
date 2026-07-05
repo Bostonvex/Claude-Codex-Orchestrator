@@ -18,6 +18,7 @@ codex-loop closes that gap, in **whatever repo you invoke it from** — it hardc
 
 ## Table of contents
 
+- [Requirements](#requirements) — dependencies & required config
 - [Quick start](#quick-start)
 - [Commands](#commands) — how you invoke it
 - [Configuration options](#configuration-options) — the Control Tower config block
@@ -33,7 +34,60 @@ codex-loop closes that gap, in **whatever repo you invoke it from** — it hardc
 
 ---
 
+## Requirements
+
+### Dependencies
+
+| Dependency | Needed for | Notes |
+|---|---|---|
+| **Claude Code** | everything | The skill runs inside it; `/codex-loop` and `/loop` are Claude Code skills. |
+| **`gh` CLI**, authenticated | everything | All state operations — create issues/labels, read comments, checkout/merge PRs. `gh auth status` must show the target repo's host. |
+| **`git`** | everything | Worktrees, commits, push to the default branch. |
+| **`/loop`** (built-in skill) | autonomous mode | Only needed for `/loop /codex-loop`. A bare `/codex-loop` runs one tick without it. |
+| **`codex` CLI + plugin**, authenticated | `worker=local` (**default**) & `hybrid` | Verify with `/codex:setup`. The plugin shells out to **Node.js** (`codex app-server`), so Node must be on PATH. Not needed if you run `worker=cloud`. |
+| **Node.js** | `worker=local` / `hybrid` | Transitive — the codex plugin's runtime is a Node script. |
+| **Codex Cloud agent** wired to the repo | `worker=cloud` only | External setup in ChatGPT/Codex Cloud: GitHub access to the repo + the `agent:codex loop:ready` label in its watch scope. The skill does not create this. |
+| A working **CI/verify command** | verification | Auto-detected (`npm`, `pytest`, …) or set via the `verify` config key. |
+
+### GitHub permissions
+
+The authenticated `gh` account must be able to, in the target repo: create labels + issues,
+pin an issue, comment, **checkout and squash-merge PRs**, and **push to the default branch**.
+If the default branch is **protected** (required reviews / status checks), the loop's
+auto-merge and direct push will be blocked — either grant the account bypass, relax the rule,
+or run the loop against a branch it may merge into. The loop never force-pushes and never
+merges on red CI.
+
+### Required config
+
+Config lives in the Control Tower issue's `CODEX-LOOP:CONFIG` block (created by scaffolding).
+Every key has a working default, so the **minimum required config is nothing** — scaffolding
+produces a runnable loop. You typically set these before real use:
+
+| Key | Set it when | Default if unset |
+|---|---|---|
+| `worker` | you can't run Codex locally → `cloud`; or want per-issue routing → `hybrid` | `local` |
+| `verify` | auto-detect can't infer your CI (monorepo, custom runner) | auto-detect |
+| `deploy` | you want the loop to deploy | *(empty — never deploys)* |
+| `priority` | queue order should follow backlog files, not issue number | issue number ascending |
+| `trailer` | you want a specific commit co-author/trailer | `Co-Authored-By: Claude …` |
+
+`state=RUN` is seeded by scaffolding and is the only key the loop *reads to decide whether to
+run at all* — set it to `PAUSE` to halt. See [Configuration options](#configuration-options)
+for the full reference.
+
+---
+
 ## Quick start
+
+**0. Prerequisites.** Confirm the [dependencies](#requirements) for your worker mode:
+
+```bash
+gh auth status            # authenticated for the target repo?
+git --version             # git present
+# only for the default local worker:
+/codex:setup              # in Claude Code — verifies the codex CLI is installed + authed
+```
 
 **1. Install the skill globally** (once):
 
@@ -52,11 +106,14 @@ Reopen your Claude Code session so it loads. `/codex-loop` is now invocable in a
 
 It detects the repo isn't set up, explains what it will create, and — **after you confirm** —
 creates the [labels](#labels) and a pinned **Control Tower issue** seeded with a
-[config block](#configuration-options). Then it stops.
+[config block](#configuration-options). Then it stops. Edit that config block now if you need a
+non-default [`worker`/`verify`/`deploy`](#required-config).
 
 **3. Add work.** Open issues for the things you want done, labeling each `agent:codex loop:ready`
 (Codex implements) or `agent:claude loop:ready` (Claude implements). Chain-blocked work gets
-`loop:blocked` instead, and is unblocked automatically as predecessors merge.
+`loop:blocked` instead, and is unblocked automatically as predecessors merge. To turn a whole
+plan into assigned, chained issues at once, run `/codex-loop plan: <file>` (see
+[the full-cycle example](docs/EXAMPLE-CYCLE.md)).
 
 **4. Run it.** One tick to watch it, or hand it the cadence to run hands-off:
 
