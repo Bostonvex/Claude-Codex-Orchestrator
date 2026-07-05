@@ -55,7 +55,7 @@ and **config store**. Its body carries a config block:
 ```
 <!-- CODEX-LOOP:CONFIG
 state=RUN            # RUN | PAUSE — the kill switch (first token wins)
-worker=cloud         # cloud | local | hybrid
+worker=local         # local | cloud | hybrid  (default: local)
 deploy=              # shell command to deploy; empty = never deploy
 verify=              # CI/verification command(s); empty = auto-detect
 priority=number      # "number" (issue # asc) or comma-separated backlog file paths

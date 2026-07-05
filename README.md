@@ -27,6 +27,10 @@ codex-loop closes that gap, in **whatever repo you invoke it from** — it hardc
 - [Guardrails](#guardrails)
 - [Layout & scope](#layout--scope)
 
+> **See it end to end:** [docs/EXAMPLE-CYCLE.md](docs/EXAMPLE-CYCLE.md) walks one feature from
+> a plan → assigned/chained issues → loop iterations → drain, with the actual comments and
+> tick logs produced at each step.
+
 ---
 
 ## Quick start
@@ -102,7 +106,7 @@ next iteration.
 ```
 <!-- CODEX-LOOP:CONFIG
 state=RUN
-worker=cloud
+worker=local
 deploy=
 verify=
 priority=number
@@ -113,7 +117,7 @@ trailer=Co-Authored-By: Claude <noreply@anthropic.com>
 | Key | Values | Default | What it does |
 |---|---|---|---|
 | `state` | `RUN` \| `PAUSE` | `RUN` | The **kill switch**. `PAUSE` halts every iteration until it reads `RUN`. First token wins. |
-| `worker` | `cloud` \| `local` \| `hybrid` | `cloud` | How Codex is activated (see [below](#how-it-manages-codexs-work)). `hybrid` routes per issue via `worker:*` labels. |
+| `worker` | `local` \| `cloud` \| `hybrid` | `local` | How Codex is activated (see [below](#how-it-manages-codexs-work)). `local` runs Codex in-session (needs the `codex` CLI); `hybrid` routes per issue via `worker:*` labels. |
 | `deploy` | shell command | *(empty)* | Deploy command. **Empty = never deploy.** Runs only when set **and** the issue's Deployment Expectation asks. |
 | `verify` | shell command(s) | *(empty)* | CI / verification command. **Empty = auto-detect** (`npm ci && npm test`, `pytest`, etc. from the repo). |
 | `priority` | `number` \| file paths | `number` | Queue order. `number` = issue number ascending; or a comma-separated list of backlog file paths to read in order. |
@@ -165,32 +169,7 @@ Freezing the contract first is what makes Codex's output verifiable — Claude k
 what "correct" means before Codex starts. Claude is the **sole merger and deployer**; Codex
 never merges or deploys.
 
-### Mode 1 — Cloud Codex (`worker=cloud`, default)
-
-Claude **activates Codex by writing a signal into GitHub**; an externally-configured Codex
-Cloud agent reacts to it.
-
-```
-Claude:  label issue  agent:codex loop:ready
-         post  <!-- LOOP:ASSIGN agent=codex issue=NN contract=frozen -->
-                                   │
-                                   ▼   (activation happens OUTSIDE this skill)
-Codex Cloud  — the ChatGPT/Codex Cloud agent you connected to this repo with GitHub access —
-             sees the assignment, implements it, and opens a  codex/*  PR, posting:
-                 <!-- LOOP:STATUS agent=codex issue=NN state=pr-open pr=### -->
-                                   │
-                                   ▼   (next iteration)
-Claude:  reads that STATUS marker → gh pr checkout → verify → merge or bounce
-```
-
-**What activates Codex here:** the `agent:codex loop:ready` label + the `LOOP:ASSIGN` comment
-are the trigger. The actual pickup depends on **Codex Cloud being wired to the repo**
-separately (in ChatGPT/Codex Cloud, with GitHub access and the loop's label in its watch
-scope). The skill produces the *state* Codex reacts to — it does not itself start the cloud
-agent. This mode is fire-and-forget, but it has an **idle gap**: Codex sits idle between
-opening a PR and the next iteration assigning it more work.
-
-### Mode 2 — Local Codex (`worker=local`)
+### Local Codex (`worker=local`, default)
 
 Claude **activates Codex directly, in-session**, via the [`codex` plugin](https://github.com/openai/codex).
 No external wiring, no idle gap.
@@ -212,9 +191,35 @@ Claude:  run `verify` in the worktree → commit (with trailer) → push → clo
 (`codex app-server`) the instant it has a frozen contract. Because it's synchronous, verify
 happens in the **same iteration** and **no Codex process ever sits idle** — Claude feeds it the
 next issue as soon as the last one lands. Cost: Codex runs on your machine and the session must
-be open. Requires the `codex` CLI installed and authenticated (`/codex:setup`).
+be open. Requires the `codex` CLI installed and authenticated (`/codex:setup`). This is the
+default because it needs no external setup beyond the CLI and has no idle gap.
 
-### Mode 3 — Hybrid (`worker=hybrid`)
+### Cloud Codex (`worker=cloud`)
+
+Claude **activates Codex by writing a signal into GitHub**; an externally-configured Codex
+Cloud agent reacts to it.
+
+```
+Claude:  label issue  agent:codex loop:ready
+         post  <!-- LOOP:ASSIGN agent=codex issue=NN contract=frozen -->
+                                   │
+                                   ▼   (activation happens OUTSIDE this skill)
+Codex Cloud  — the ChatGPT/Codex Cloud agent you connected to this repo with GitHub access —
+             sees the assignment, implements it, and opens a  codex/*  PR, posting:
+                 <!-- LOOP:STATUS agent=codex issue=NN state=pr-open pr=### -->
+                                   │
+                                   ▼   (next iteration)
+Claude:  reads that STATUS marker → gh pr checkout → verify → merge or bounce
+```
+
+**What activates Codex here:** the `agent:codex loop:ready` label + the `LOOP:ASSIGN` comment
+are the trigger. The actual pickup depends on **Codex Cloud being wired to the repo**
+separately (in ChatGPT/Codex Cloud, with GitHub access and the loop's label in its watch
+scope). The skill produces the *state* Codex reacts to — it does not itself start the cloud
+agent. Fire-and-forget, but it has an **idle gap**: Codex sits idle between opening a PR and
+the next iteration assigning it more work.
+
+### Hybrid (`worker=hybrid`)
 
 Route per issue: label an issue `worker:local` for the synchronous in-session path or
 `worker:cloud` for fire-and-forget. Good for running small/urgent items locally while leaving

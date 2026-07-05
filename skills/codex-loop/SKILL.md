@@ -45,7 +45,7 @@ Do this before any loop work, every invocation:
    ```
    <!-- CODEX-LOOP:CONFIG
    state=RUN            # RUN | PAUSE  — the kill switch (first token wins)
-   worker=cloud         # cloud | local | hybrid
+   worker=local         # local | cloud | hybrid  (default: local)
    deploy=              # shell command to deploy; empty = never deploy
    verify=              # shell command(s) for CI/verification; empty = auto-detect
    priority=number      # "number" (issue # asc) or comma-separated backlog file paths
@@ -80,6 +80,30 @@ user to confirm (offer to tailor `deploy`/`verify`/`priority` first). On confirm
    does not immediately run a tick; tell the user to add `agent:codex`/`agent:claude` +
    `loop:ready` issues, then invoke `/codex-loop` again (or `/loop /codex-loop` for
    autonomous cadence).
+
+---
+
+## Phase B+ — Plan intake (turn a plan into issues)
+
+Runs when the user hands you a **plan** rather than (or right after) scaffolding — e.g.
+`/codex-loop plan: docs/PLAN.md`, an inline plan in the prompt, or "break issue #N into loop
+issues". This is how a plan becomes the assigned, chained backlog the loop then drains.
+Creating issues is outward, so **confirm-first**:
+
+1. **Decompose.** Read the plan; split it into the **smallest independently-verifiable units
+   of work**. Each becomes one issue.
+2. **Assign an owner** per unit: backend / data / API / migrations → `agent:codex`; UI,
+   orchestration, and glue you'll implement yourself → `agent:claude`.
+3. **Order it.** Determine dependencies. The first unit in a chain is `loop:ready`; each
+   dependent is `loop:blocked` with the blocker named in its body (e.g. "blocked on #NN").
+   The loop clears `loop:blocked` automatically as predecessors merge.
+4. **Freeze each `agent:codex` contract** in the issue body — pin types, API shape, migration
+   id, and acceptance criteria — so it is assignable the moment it becomes ready.
+5. **Confirm, then create.** Show the proposed issue list (title, owner, labels, blocked-on,
+   frozen contract) and create the issues only on the user's OK. Post a one-line intake
+   summary on the Control Tower issue.
+
+A normal `/codex-loop` (or `/loop /codex-loop`) then runs them to drain.
 
 ---
 
