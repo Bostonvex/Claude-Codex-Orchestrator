@@ -1,129 +1,177 @@
 ---
 name: codex-loop
 description: >
-  Drive the auspicia backlog toward drain autonomously — verify Codex PRs, assign or
-  implement ready backend work, do one frontend issue, deploy what asks, and log to the
-  Control Tower issue — then self-pace the next iteration instead of waiting for a manual
-  restart. State lives entirely in GitHub issues. Honors PAUSE and the needs:human park
-  rules every iteration. Use when the user wants the two-agent loop to run without hand-kicks.
+  Autonomously drive a two-agent backlog toward drain in the CURRENT GitHub repo: verify
+  Codex's PRs, assign or implement ready work, deploy what asks, log to a Control Tower
+  issue — then self-pace the next iteration instead of waiting for a manual restart. State
+  lives entirely in GitHub issues (labels + a small comment grammar). On first use it
+  auto-detects whether the repo is set up and offers to scaffold what's missing. Honors a
+  PAUSE switch and needs:human park rules every iteration. Repo-agnostic — no project is
+  hardcoded. Use when the user wants the Claude+Codex loop to run without hand-kicks.
 ---
 
 # codex-loop
 
-You are the **ORCHESTRATOR** of the Auspicia two-agent loop (`Bostonvex/auspicia`). This
-skill runs **one iteration** of the loop and then **schedules the next one itself** (when
-invoked under `/loop`) — the human never has to restart it. All authority, guardrails, and
-comment grammar are inherited verbatim from auspicia's `CLAUDE.md` and
-`docs/AGENT-LOOP-PROTOCOL.md`. Do not weaken them.
+You are the **ORCHESTRATOR** of a two-agent loop in **whatever GitHub repo the session is
+currently in**. Two agents:
 
-You do all **frontend** work; you **verify / merge / deploy ALL** work (yours and Codex's
-backend PRs). You are the **sole merger and deployer**. Codex only implements assigned
-backend and returns work for you to verify.
+- **Claude (you)** — orchestrate; implement `agent:claude` issues directly; **verify, merge,
+  and deploy ALL** work (yours and Codex's). You are the **sole merger and deployer**.
+- **Codex (worker)** — implements assigned `agent:codex` issues only and returns work for
+  you to verify. Never merges or deploys.
 
-## Applicability — check FIRST (this is a global skill)
+This skill is **repo-agnostic**: nothing about any specific project is hardcoded. Everything
+project-specific (which issue is the Control Tower, the deploy command, CI commands, priority
+order) is read from the **Control Tower issue's config block**, and created on first run.
 
-This skill is installed personally (`~/.claude/skills/`) so it is invocable from any repo,
-but it currently targets **one loop: `Bostonvex/auspicia`** (Control Tower issue #175,
-`scripts/deploy-vps.sh`, the `IRIS-BACKLOG`/`PRODUCT-ROADMAP` priority order). Before doing
-anything:
+---
 
-- Confirm the working repo is `Bostonvex/auspicia` (`gh repo view --json nameWithOwner`).
-- If it is **not** auspicia: do not run the iteration. Say the skill targets the auspicia
-  loop and stop — unless the user has pointed it at another repo that provides the same
-  contract (a Control Tower issue with `LOOP:STATE`, the `agent:codex`/`agent:claude` +
-  `loop:ready` label scheme, and the `LOOP:*` comment grammar). Treat repo, Control Tower
-  issue number, and deploy command as the parameters to confirm, not constants to assume.
+## Phase A — Detect target state (ALWAYS run first)
 
-## Preflight (once, at the start of an iteration)
+Do this before any loop work, every invocation:
 
-1. `git fetch origin`.
-2. Read the **Control Tower issue #175**.
-3. Ensure the working tree is clean. If it is dirty and you did not create the changes,
-   **stop and report** — never plow over state you don't own.
-4. If you are in a throwaway worktree, remember: **work survives only via
-   `git push origin HEAD:main`.** Run `npm ci` in `app/` before any frontend build/test.
+1. **Identify the repo:** `gh repo view --json nameWithOwner,url`. If not inside a GitHub
+   repo with `gh` authed, say so and stop.
+2. **Find the Control Tower issue:** `gh issue list --label "codex-loop:control" --state open
+   --json number,title,body`.
+   - **0 results → NOT SET UP.** Go to **Phase B (Scaffold)**.
+   - **1 result →** this is the Control Tower. Parse its `CODEX-LOOP:CONFIG` block (below).
+   - **>1 results →** ambiguous; list them and ask the user which one is authoritative;
+     do not proceed until resolved.
+3. **Check the label set exists:** `gh label list`. The required labels are listed in
+   Phase B. If any are missing, offer to create just the missing ones (same confirm-first
+   rule as scaffolding).
+4. **Read config** from the Control Tower body's config block:
+   ```
+   <!-- CODEX-LOOP:CONFIG
+   state=RUN            # RUN | PAUSE  — the kill switch (first token wins)
+   worker=cloud         # cloud | local | hybrid
+   deploy=              # shell command to deploy; empty = never deploy
+   verify=              # shell command(s) for CI/verification; empty = auto-detect
+   priority=number      # "number" (issue # asc) or comma-separated backlog file paths
+   trailer=Co-Authored-By: Claude <noreply@anthropic.com>
+   -->
+   ```
+   Any missing key falls back to the default shown above. `state` is authoritative for
+   PAUSE. If a key's value is empty and needed, auto-detect (CI) or skip (deploy).
 
-## Guard — runs first, every iteration (non-negotiable)
+If set up and `state=RUN`, continue to **Phase C (Iterate)**.
 
-- **PAUSE.** If the first `LOOP:STATE=` token in #175's body is `PAUSE`: post nothing, say
-  "paused", and **halt**. Under `/loop`, this is a *soft* halt — schedule a long re-check
-  (~1800s) so un-pausing auto-resumes; do not merge/assign/deploy anything.
-- **Park for human** (label `needs:human`, note on #175, do NOT act) — check before any
-  assign/merge/deploy on an issue: vendor spend/licensing (#118), agreements/legal (#119),
-  external-facing comms, destructive/irreversible migrations not explicitly authorized in
-  the issue, and anything genuinely ambiguous. **When unsure, park — don't guess.**
+---
 
-## The iteration
+## Phase B — Scaffold (only when not set up)
+
+The repo has no Control Tower issue. **Do not create anything silently** — creating issues
+and labels is an outward action. Explain what's missing and what you'll create, then ask the
+user to confirm (offer to tailor `deploy`/`verify`/`priority` first). On confirmation:
+
+1. **Create the label set** (skip any that already exist):
+   - `codex-loop:control` — marks the single Control Tower issue
+   - `agent:claude` — Claude implements this directly
+   - `agent:codex` — assigned to the Codex worker
+   - `loop:ready` — actionable now
+   - `loop:blocked` — gated on a predecessor
+   - `needs:human` — **parked**; the loop must not act
+   - `worker:local` / `worker:cloud` — *(optional; only if worker=hybrid)* per-issue routing
+2. **Create the Control Tower issue**, labeled `codex-loop:control`, seeded with the config
+   block above (ask the user for `deploy`/`verify`/`priority`, or leave defaults), plus a
+   short human-readable "what this issue is" preamble. Pin it (`gh issue pin`).
+3. **Report** the new issue number and the created labels. **Stop here** — first-time setup
+   does not immediately run a tick; tell the user to add `agent:codex`/`agent:claude` +
+   `loop:ready` issues, then invoke `/codex-loop` again (or `/loop /codex-loop` for
+   autonomous cadence).
+
+---
+
+## Phase C — One iteration
+
+Runs only when set up and `state=RUN`. Mirrors the two-agent tick, driven by config.
+
+### Guard (first, every iteration — non-negotiable)
+- **PAUSE.** If config `state=PAUSE`: post nothing, say "paused", and **halt**. Under
+  `/loop`, schedule a long re-check (~1800s) so setting `state=RUN` auto-resumes.
+- **Clean tree.** If the working tree is dirty and you didn't create the changes, stop and
+  report — never plow over state you don't own.
+- **Park check** (before any assign/merge/deploy on an issue). Park — label `needs:human`,
+  comment why on the Control Tower issue, do NOT act — anything that is: money/vendor/
+  licensing, legal/agreements, external-facing communication, a destructive or irreversible
+  data migration not explicitly authorized in the issue, or genuinely ambiguous. **When
+  unsure, park — don't guess.**
 
 ### 1. Verify Codex PRs first
 Find issues whose newest comment is `LOOP:STATUS … state=pr-open` with no later
 `LOOP:VERIFY` from you. For each:
-- `gh pr checkout <n>` in this worktree; run its Verification Plan **and** CI —
-  `app`: `npm ci && npm run lint && npm run build && npm test`;
-  `services/api`: `python -m compileall services/api && python -m pytest services/api/tests -q`.
-- Review the diff against the issue's Acceptance Criteria + the guardrails; `git checkout -`.
+- `gh pr checkout <n>`; run the config `verify` command (or auto-detect: `package.json` →
+  `npm ci && npm test`; `pyproject.toml`/`pytest` → `python -m pytest -q`; adapt to the
+  repo) **and** the issue's own Verification Plan; review the diff against its Acceptance
+  Criteria; `git checkout -`.
 - **Pass →** `gh pr merge <n> --squash`; post `<!-- LOOP:VERIFY issue=NN pr=### verdict=pass -->`
-  + the six-heading comment; close the issue; remove `loop:blocked` from the next issue in
-  its chain.
+  + the six-heading comment; close the issue; remove `loop:blocked` from its chain successor.
 - **Fail →** do NOT merge; post `<!-- LOOP:VERIFY issue=NN pr=### verdict=bounce -->` with
-  specific, reproducible findings; leave it `agent:codex loop:ready`. Two consecutive
-  bounces on one issue → relabel `needs:human`.
+  specific reproducible findings; leave it `agent:codex loop:ready`. Two consecutive bounces
+  on one issue → relabel `needs:human`.
 
-### 2. Backend — assign or implement (pluggable worker)
-Pick the next actionable backend issue (priority: `docs/IRIS-BACKLOG.md` →
-`docs/PRODUCT-ROADMAP.md` → issue number). Apply the park check. Freeze the contract in the
-issue body (pin types / API shape / migration number) if not already frozen.
+### 2. Codex-owned work — assign or implement
+Pick the next actionable `agent:codex loop:ready` issue by config `priority` (default: issue
+number ascending; if backlog paths given, read them in order). Apply the park check. Freeze
+the contract in the issue body (pin types / API shape / migration id) if not already frozen.
+Route by config `worker`:
+- **cloud** (or `worker:cloud` in hybrid): label `agent:codex loop:ready`; post
+  `<!-- LOOP:ASSIGN agent=codex issue=NN contract=frozen -->`. Codex returns a PR that a
+  later iteration verifies (step 1).
+- **local** (or `worker:local` in hybrid): cut a fresh worktree off the default branch; hand
+  the frozen contract to the **`codex:codex-rescue`** subagent with `--write` (one `task`
+  call — it is a thin forwarder); run the `verify` command + the issue's Verification Plan in
+  the worktree. Pass → commit (with config `trailer`) → push to the default branch → close →
+  unblock successor. Fail → re-hand once via `--resume` with findings; second fail →
+  `needs:human`.
 
-- **Cloud worker (default):** label `agent:codex loop:ready backend`; post
-  `<!-- LOOP:ASSIGN agent=codex issue=NN contract=frozen -->`. Codex will return a `codex/*`
-  PR that a later iteration verifies (step 1).
-- **Local worker** (issue labeled `worker:local`, or you are told to run synchronously):
-  cut a fresh worktree off `origin/main`; hand the frozen contract to the
-  **`codex:codex-rescue`** subagent with `--write` (one `task` call, it is a thin
-  forwarder); run CI + the Verification Plan in the worktree. Pass → commit with the
-  `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>` trailer → `git push origin
-  HEAD:main` → close → unblock the chain successor. Fail → re-hand once via `--resume` with
-  findings; second fail → `needs:human`.
-
-### 3. Do ONE frontend issue (you implement directly)
-`git fetch origin && git reset --hard origin/main`. Take the top `agent:claude loop:ready`
-issue by priority. Implement it; get its Verification Plan + CI green; commit (with the
-`Co-Authored-By` trailer); `git push origin HEAD:main` (rebase on `origin/main` and retry if
-rejected; if a conflict persists, report on the issue and stop). Post the six-heading
-handover comment; close the issue; unblock its successor.
+### 3. Claude-owned work — implement one directly
+Sync to the default branch (`git fetch origin && git reset --hard origin/<default>`). Take
+the top `agent:claude loop:ready` issue by config `priority`. Implement it; get the `verify`
+command + its Verification Plan green; commit (with config `trailer`); push to the default
+branch (rebase + retry if rejected; on a persistent conflict, report on the issue and stop).
+Post the six-heading handover comment; close the issue; unblock its successor.
 
 ### 4. Deploy
-For each issue merged/closed this iteration whose Deployment Expectation calls for it:
-`scripts/deploy-vps.sh` (health-gated, self-fails ~100s if unhealthy); smoke-check; record
-in the handover. **Never merge or deploy on red CI.** If a push reddens `main`, fix-forward
-or revert in THIS iteration.
+Only if config `deploy` is non-empty **and** the issue's Deployment Expectation asks: run the
+`deploy` command; smoke-check; record in the handover. **Never merge or deploy on red CI.**
+If a push reddens the default branch, fix-forward or revert in THIS iteration.
 
 ### 5. Log
-Append one comment to #175: queue counts (ready/blocked/parked per agent), what you
-assigned / verified / merged / deployed, blockers, anything newly parked. Every issue
-comment leads with its `LOOP:*` marker and is followed by the six headings: Current State /
+Append one comment to the Control Tower issue: queue counts (ready/blocked/parked per agent),
+what you assigned / verified / merged / deployed, blockers, anything newly parked. Every
+issue comment leads with its `LOOP:*` marker, followed by the six headings: Current State /
 Changed / Verification / Deployment / Risks-Unknowns / Next Recommended Step.
 
-## Pace — replaces the manual restart
+---
 
-Decide when the next iteration should run, then act on it:
+## Phase D — Pace (replaces the manual restart)
 
-- **Not under `/loop` (bare `/codex-loop`):** end the turn after step 5 — one iteration only.
+- **Bare `/codex-loop`:** end the turn after step 5 — one iteration only.
 - **Under `/loop` (self-paced):** call `ScheduleWakeup` before ending:
   - a PR is mid-CI or a deploy is settling → **~270s** (stays in the prompt-cache window).
   - work happened this iteration → **~600s**.
   - only routine polling, nothing in flight → **~900s**.
-  - **both queues drained** → post "queue drained" on #175 and **STOP the loop** (no wakeup).
-  - **paused** → **~1800s** re-check (auto-resume on `RUN`).
-- Respect a max-iterations / cost backstop; if hit, log it on #175 and stop.
+  - **both queues drained** → post "queue drained" on the Control Tower issue and **STOP**.
+  - **paused** → **~1800s** re-check (auto-resume when `state=RUN`).
+- Respect a max-iterations / cost backstop; if hit, log it and stop.
 
 ## Stop conditions (halt cleanly on any)
-PAUSE · both queues drained · dirty tree you didn't create · max-iterations backstop ·
+`state=PAUSE` · both queues drained · dirty tree you didn't create · max-iterations backstop ·
 an issue that trips the park conditions (park that issue, continue the loop for the rest).
 
-## Guardrails (verbatim — never weakened)
-CI green before merge/deploy; never leave `main` red. Additive/idempotent DDL; tables
-pre-created as `tap`; no reseed/drop of live data; preserve audit trails (`llm_requests`,
-`assessments`, `cost_events`). Deploy only when the issue asks. Commit messages end with the
-`Co-Authored-By` trailer. Park (don't act) on vendor spend/licensing, legal/agreements,
-external comms, unauthorized destructive migrations, and anything ambiguous.
+## Comment grammar (the state machine)
+```
+<!-- LOOP:ASSIGN agent=codex issue=NN contract=frozen -->      Claude → Codex
+<!-- LOOP:STATUS agent=codex issue=NN state=… pr=### ci=… -->  Codex → Claude (you READ these)
+<!-- LOOP:VERIFY issue=NN pr=### verdict=pass|bounce -->        Claude's verdict
+CODEX-LOOP:CONFIG block (Control Tower issue body)             config incl. state=RUN|PAUSE
+```
+
+## Guardrails (never weakened)
+CI green before merge/deploy; never leave the default branch red. Prefer additive/idempotent
+migrations; never reseed/drop live data or destroy audit trails without explicit issue
+authorization. Deploy only when configured and the issue asks. Commit messages end with the
+configured `trailer`. Park (don't act) on money/legal/external-comms/unauthorized-destructive/
+ambiguous. Claude is the sole merger and deployer; Codex never merges or deploys.

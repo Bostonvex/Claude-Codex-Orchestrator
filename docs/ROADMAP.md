@@ -3,49 +3,51 @@
 Staged from "works today with zero new infra" to "fully unattended." Each phase is
 independently useful; stop at any phase.
 
-## Phase 0 — documentation (this repo)
-**Status: in progress.**
+## Phase 0 — repo-agnostic engine (this repo)
+**Status: done.**
 - [x] Design, issue protocol, install docs.
-- [x] `/codex-loop` skill draft (cloud worker path).
-- [ ] Review the park list against auspicia `CLAUDE.md` verbatim before anything runs live.
+- [x] `/codex-loop` skill: detect → scaffold → iterate → pace, no project hardcoded.
+- [x] Config lives in the Control Tower issue; auto-detect + confirm-first scaffolding.
+- [x] Installed globally with a target guard.
 
 ## Phase 1 — kill the manual restart (cloud worker, interactive)
-**Goal: `/loop /codex-loop` runs the existing tick on a self-pacing cadence.** No change to
-how Codex works — still cloud, still `LOOP:ASSIGN` + `codex/*` PRs. Only the *orchestrator's*
-restart is automated.
-- [ ] Install skill into auspicia (`.claude/skills/codex-loop`).
-- [ ] Dry-run single ticks (`/codex-loop`) until behaviour matches the current manual tick.
-- [ ] Verify PAUSE is honoured as a soft, auto-resuming halt.
+**Goal: `/loop /codex-loop` runs the tick on a self-pacing cadence.** No change to how Codex
+works — still cloud, still `LOOP:ASSIGN` + PRs. Only the orchestrator's restart is automated.
+- [ ] First-run scaffold in the reference repo; confirm labels + Control Tower + config.
+- [ ] Dry-run single ticks (`/codex-loop`) until behaviour matches a manual tick.
+- [ ] Verify PAUSE is a soft, auto-resuming halt.
 - [ ] Verify "queue drained" stop condition and the max-iterations backstop.
-- [ ] Run under `/loop` for a full work session; confirm no manual kick needed.
+- [ ] Run under `/loop` for a full session; confirm no manual kick needed.
 
 ## Phase 2 — close the idle gap (local worker, in-session)
-**Goal: no Codex process ever sits idle.** Add the `codex:codex-rescue --write` worker so
-backend issues are implemented in a worktree *within the same iteration* and verified
-immediately.
+**Goal: no Codex process ever sits idle.** `worker=local` implements backend issues in a
+worktree within the same iteration and verifies immediately.
 - [ ] Worktree-per-issue isolation + cleanup.
-- [ ] Local-worker branch of the engine: rescue → CI → verify → commit → push.
+- [ ] Local-worker branch: `codex:codex-rescue` → verify → commit → push.
 - [ ] One-retry-then-park on failure (via `--resume`).
-- [ ] Hybrid routing: `worker:local` / `worker:cloud` labels (or a size heuristic).
+- [ ] Hybrid routing via `worker:local` / `worker:cloud`.
 - [ ] Cost ceiling honoured (local Codex runs on the user's machine).
 
 ## Phase 3 — unattended cron (GATED)
-**Goal: advances with the laptop closed.** A `/schedule` routine invoking `/codex-loop`.
-**Blocked until:**
-- [ ] Document *why* auspicia disabled the headless `claude -p` / launchd driver
-      ("interactive-only") — do not silently re-enable a deliberate decision.
+**Goal: advances with the laptop closed** — a `/schedule` routine invoking `/codex-loop`.
+Blocked until:
 - [ ] Confirm headless auth for `gh` and any MCP the loop touches.
-- [ ] Prove the stop/park conditions hold with no human watching (extended dry run under
-      Phase 1/2 first).
+- [ ] Confirm the target repo's own policy allows unattended execution (some deployments
+      deliberately restrict to interactive).
+- [ ] Prove stop/park conditions hold unattended (extended Phase 1/2 dry run first).
 - [ ] Explicit user sign-off.
 
 ## Phase 4 — hardening
-- [ ] Structured tick metrics on #175 (throughput, bounce rate, parked count over time).
-- [ ] Deterministic fan-out for the verify stage (a Workflow: verify N open PRs in
-      parallel) when the PR queue is deep.
+- [ ] Structured tick metrics on the Control Tower issue (throughput, bounce rate, parked
+      count over time).
+- [ ] Deterministic fan-out for the verify stage (a Workflow: verify N open PRs in parallel)
+      when the PR queue is deep.
 - [ ] Alerting when the loop parks or halts on red CI.
+- [ ] Config schema validation + a `/codex-loop --check` dry mode.
 
 ## Non-goals
-- Weakening any auspicia guardrail (park rules, CI-green-before-merge, additive DDL,
-  audit-trail preservation). codex-loop inherits them verbatim; it never relaxes them.
+- Hardcoding any project into the skill. All project specifics stay in the Control Tower
+  config block.
+- Weakening guardrails (park rules, CI-green-before-merge, data safety). The engine inherits
+  them structurally; it never relaxes them.
 - Giving Codex merge/deploy authority. Claude remains the sole merger + deployer.

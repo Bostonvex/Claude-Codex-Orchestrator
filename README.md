@@ -1,69 +1,71 @@
 # codex-loop
 
-An autonomous orchestration engine that lets **Claude Code control the backend work
-handed to Codex** — using **GitHub issues as the single source of truth for state and
-tracking** — and **eliminates the manual "kick the loop again" step**.
+A **repo-agnostic** orchestration engine that lets **Claude Code control the work handed to
+Codex** — using **GitHub issues as the single source of truth for state and tracking** — and
+**eliminates the manual "kick the loop again" step**.
 
-It is the productised version of the two-agent Auspicia loop: Claude orchestrates,
-verifies, merges, and deploys; Codex implements assigned backend work. Today that loop
-stops whenever the queue momentarily empties or a tick ends, and a human has to restart
-it. codex-loop closes that gap.
+Claude orchestrates, verifies, merges, and deploys; Codex implements assigned work. The loop
+normally stops whenever the queue momentarily empties or a tick ends, and a human restarts
+it. codex-loop closes that gap, in **whatever repo you invoke it from** — it hardcodes no
+project.
 
 ## Objective
 
-> Have Claude control the work that goes to Codex via GitHub issues (for state + tracking),
-> and eliminate manual restarts.
-
-Two concrete outcomes:
+> Have Claude control the work that goes to Codex via GitHub issues (state + tracking), and
+> eliminate manual restarts.
 
 1. **Issue-driven control.** Every unit of work is a GitHub issue. Its labels + a small
-   comment grammar (`LOOP:*` markers) *are* the state machine — assignment, in-flight,
-   PR-open, verified, parked. Nothing lives in Claude's head between ticks; state survives
-   restarts because it lives in GitHub.
-2. **No manual restarts.** The orchestrator paces itself (poll tight while work is in
-   flight, back off when idle, halt cleanly when drained or paused) instead of running one
-   tick and waiting for a human to re-run it.
+   comment grammar (`LOOP:*` markers) *are* the state machine. Nothing lives in Claude's head
+   between ticks; state survives restarts because it lives in GitHub.
+2. **No manual restarts.** The orchestrator paces itself (poll tight while work is in flight,
+   back off when idle, halt when drained or paused) instead of running one tick and waiting.
+
+## Repo-agnostic by design
+
+The skill hardcodes **nothing** about any project. On first use in a repo it:
+
+1. **Auto-detects** whether the loop is set up (looks for a `codex-loop:control` issue + the
+   label set).
+2. If not, **prompts to scaffold** it — creates the labels and a pinned **Control Tower
+   issue** seeded with a config block, after you confirm.
+3. Reads all project-specific parameters (deploy command, CI command, priority order, worker
+   mode) from that Control Tower config block — so the same global skill drives any repo.
 
 ## Two ways to hand work to Codex
 
-codex-loop supports both Codex surfaces you already have, and treats them as
-interchangeable workers behind the same issue-state model:
-
-| Surface | What it is | Latency | Cost/where |
+| Surface | What it is | Latency | Where |
 |---|---|---|---|
 | **Cloud Codex** | ChatGPT cloud picks up `agent:codex loop:ready` issues, returns `codex/*` PRs | async (idle gap) | fire-and-forget |
 | **Local Codex** | the `codex` plugin's `codex:codex-rescue` subagent → local `codex app-server` | synchronous, in-session | your machine |
 
-The **idle gap** — Codex finishing a PR and then having nothing to do until the next tick —
-is exactly what the synchronous local path removes: Claude feeds Codex the next issue the
-instant the last one lands, so no independent Codex process ever sits idle.
+The **idle gap** — Codex finishing a PR then having nothing to do until the next tick — is
+what the synchronous local path removes: Claude feeds Codex the next issue the instant the
+last one lands. Choose per repo (or per issue, in hybrid mode) via the `worker` config.
+
+## Install (global personal skill)
+
+```bash
+mkdir -p "$HOME/.claude/skills"
+ln -sfn "$HOME/Code/codex-loop/skills/codex-loop" "$HOME/.claude/skills/codex-loop"
+```
+
+`/codex-loop` is now invocable from any repo. See [docs/INSTALL.md](docs/INSTALL.md).
 
 ## Layout
 
 ```
 codex-loop/
-├── README.md                     ← you are here
+├── README.md
 ├── docs/
-│   ├── DESIGN.md                 ← the full design: stall points, engine, cadence, guardrails
-│   ├── ISSUE-PROTOCOL.md         ← the GitHub-issue state model + LOOP:* comment grammar
-│   ├── INSTALL.md                ← how to install the skill into a target repo + run it
-│   └── ROADMAP.md                ← staged plan, from "today" to fully unattended
-└── skills/
-    └── codex-loop/
-        └── SKILL.md              ← the invocable /codex-loop orchestration skill (draft)
+│   ├── DESIGN.md            ← stall points, detect→scaffold→iterate→pace, guardrails
+│   ├── ISSUE-PROTOCOL.md    ← labels + LOOP:* grammar + Control Tower config = the state machine
+│   ├── INSTALL.md           ← global install, first-run scaffolding, running the loop
+│   └── ROADMAP.md           ← phased plan
+└── skills/codex-loop/SKILL.md   ← the invocable /codex-loop orchestrator
 ```
 
-## Status
+## Reference target
 
-Design + skill draft. The skill is installed **globally** as a personal skill
-(`~/.claude/skills/codex-loop` → this repo), so `/codex-loop` is invocable from any project;
-because it's global it **checks its target first** and only runs against `Bostonvex/auspicia`
-(or another repo you explicitly point it at that provides the same contract). See
-[docs/INSTALL.md](docs/INSTALL.md).
-
-## Relationship to auspicia
-
-This repo is the *engine and its documentation*. The loop it drives operates on
-`Bostonvex/auspicia` — its issues, its `origin/main`, its `scripts/deploy-vps.sh`. The
-authority model, guardrails, and comment grammar are inherited verbatim from auspicia's
-`CLAUDE.md` and `docs/AGENT-LOOP-PROTOCOL.md`; this repo does not weaken them.
+Built for, and validated against, the two-agent loop on `Bostonvex/auspicia` (Claude =
+frontend + orchestration, Codex = backend). That repo is the reference deployment, not a
+dependency — the skill itself contains no auspicia-specific code.
