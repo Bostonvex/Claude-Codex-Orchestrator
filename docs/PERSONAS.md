@@ -20,7 +20,7 @@ orchestrator's context.
 |---|---|---|---|
 | **architect** | Decompose a plan/large issue; choose the approach; **freeze the contract** (API shape, types, migration id, acceptance criteria) | `Plan` agent / plan mode | read-only → writes the issue body |
 | **context-analyzer** | Map the relevant code area *before* implementing; return where things live + risks | `Explore` agent | read-only → brief |
-| **codex-implementer** | Write backend/data/API/migration code to the frozen contract | `codex:codex-rescue` (local) or cloud Codex | writes a worktree / PR |
+| **codex-implementer** | Write backend/data/API/migration code to the frozen contract | `codex exec` (local, observable bg run) or cloud Codex | writes a worktree / PR |
 | **claude-implementer** | Write UI, glue, orchestration code | Claude, directly | writes a worktree |
 | **verifier** | Adversarially check the diff satisfies the issue's acceptance criteria + Verification Plan | `general-purpose` subagent | read-only → `pass`/`bounce` + findings |
 | **reviewer** | Review the diff for bugs, security, quality | `/code-review` (or `code-reviewer` agent) | read-only → findings |

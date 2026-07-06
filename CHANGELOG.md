@@ -2,6 +2,26 @@
 
 All notable changes to codex-loop. Newest first.
 
+## 0.1.1 — 2026-07-06
+
+### Changed
+- **Local worker is now an observable, bounded, fallible background process.** The old blocking
+  `codex:codex-rescue` subagent made a 20-minute stall indistinguishable from real progress. The
+  loop now preflights `codex doctor`, then runs
+  `codex exec --json -C <worktree> -s workspace-write -o codex-<NN>.result > codex-<NN>.jsonl` in
+  the background and **watches the JSONL** — a growing log means working, a frozen one means hung.
+  On stall / deadline / verify-fail it kills the run, posts the last ~40 JSONL lines + the `-o`
+  result for debugging, and falls back, so a wedged Codex never blocks the queue.
+
+### Added
+- **Config knobs** `codexTimeoutSec` (default 900), `codexStallSec` (default 240), and `fallback`
+  (`claude` \| `park`) in the Control Tower `CODEX-LOOP:CONFIG` block.
+- **JSON trajectory viewer** — [`tools/codex-json-viewer.html`](tools/codex-json-viewer.html), a
+  single dependency-free HTML file that renders a `codex-<NN>.jsonl` run (drag-drop / open / paste):
+  the agent's reasoning, shell commands with exit codes + output, and file edits, in order, with
+  type filters, text search, and a token-usage summary. Runs entirely in the browser — nothing is
+  uploaded.
+
 ## 0.1.0 — 2026-07-05
 
 First complete, live-validated release of the engine.

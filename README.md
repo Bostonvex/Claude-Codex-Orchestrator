@@ -59,8 +59,8 @@ codex-loop closes that gap, in **whatever repo you invoke it from** — it hardc
 | **`gh` CLI**, authenticated | everything | All state operations — create issues/labels, read comments, checkout/merge PRs. `gh auth status` must show the target repo's host. |
 | **`git`** | everything | Worktrees, commits, push to the default branch. |
 | **`/loop`** (built-in skill) | autonomous mode | Only needed for `/loop /codex-loop`. A bare `/codex-loop` runs one tick without it. |
-| **`codex` CLI + plugin**, authenticated | `worker=local` (**default**) & `hybrid` | Verify with `/codex:setup`. The plugin shells out to **Node.js** (`codex app-server`), so Node must be on PATH. Codex work bills to the **CLI's own auth** (ChatGPT/Codex subscription, or an OpenAI API key) — **not** Claude/Anthropic tokens. Not needed if you run `worker=cloud`. |
-| **Node.js** | `worker=local` / `hybrid` | Transitive — the codex plugin's runtime is a Node script. |
+| **`codex` CLI**, authenticated | `worker=local` (**default**) & `hybrid` | The loop drives it via `codex exec --json` (observable background run); verify with `codex doctor`. It's a **Node.js** app, so Node must be on PATH. Codex work bills to the **CLI's own auth** (ChatGPT/Codex subscription, or an OpenAI API key) — **not** Claude/Anthropic tokens. Not needed if you run `worker=cloud`. |
+| **Node.js** | `worker=local` / `hybrid` | Transitive — the `codex` CLI is a Node app. |
 | **Codex Cloud agent** wired to the repo | `worker=cloud` only | External setup in ChatGPT/Codex Cloud: GitHub access to the repo + the `agent:codex loop:ready` label in its watch scope. The skill does not create this. |
 | A working **CI/verify command** | verification | Auto-detected (`npm`, `pytest`, …) or set via the `verify` config key. |
 
@@ -103,7 +103,7 @@ for the full reference.
 gh auth status            # authenticated for the target repo?
 git --version             # git present
 # only for the default local worker:
-/codex:setup              # in Claude Code — verifies the codex CLI is installed + authed
+codex doctor              # verifies the codex CLI is installed + authenticated
 ```
 
 **1. Install the skill globally** (once):
@@ -185,6 +185,9 @@ next iteration.
 <!-- CODEX-LOOP:CONFIG
 state=RUN
 worker=local
+codexTimeoutSec=900
+codexStallSec=240
+fallback=claude
 deploy=
 verify=
 priority=number
@@ -199,6 +202,9 @@ trailer=Co-Authored-By: Claude <noreply@anthropic.com>
 |---|---|---|---|
 | `state` | `RUN` \| `PAUSE` | `RUN` | The **kill switch**. `PAUSE` halts every iteration until it reads `RUN`. First token wins. |
 | `worker` | `local` \| `cloud` \| `hybrid` | `local` | How Codex is activated (see [below](#how-it-manages-codexs-work)). `local` runs Codex in-session (needs the `codex` CLI); `hybrid` routes per issue via `worker:*` labels. |
+| `codexTimeoutSec` | integer | `900` | **Local worker.** Hard wall-clock deadline for a `codex exec` run before it's killed and falls back. |
+| `codexStallSec` | integer | `240` | **Local worker.** Kill if the JSONL log hasn't grown for this long (a frozen trajectory = hung). |
+| `fallback` | `claude` \| `park` | `claude` | **Local worker.** On Codex stall / deadline / verify-fail: `claude` = Claude implements the issue itself this iteration; `park` = relabel `needs:human`. Either way the queue keeps moving. |
 | `deploy` | shell command | *(empty)* | Deploy command. **Empty = never deploy.** Runs only when set **and** the issue's Deployment Expectation asks. |
 | `verify` | shell command(s) | *(empty)* | CI / verification command. **Empty = auto-detect** (`npm ci && npm test`, `pytest`, etc. from the repo). |
 | `priority` | `number` \| file paths | `number` | Queue order. `number` = issue number ascending; or a comma-separated list of backlog file paths to read in order. |
@@ -259,28 +265,43 @@ never merges or deploys.
 
 ### Local Codex (`worker=local`, default)
 
-Claude **activates Codex directly, in-session**, via the [`codex` plugin](https://github.com/openai/codex).
-No external wiring, no idle gap.
+Claude **activates Codex directly, in-session**, via the [`codex` CLI](https://github.com/openai/codex)
+— but as an **observable, bounded, fallible background process**, never a blocking black box. (A
+blocking subagent makes a 20-minute stall look identical to real progress; the streamed JSONL log
+below is the instrument that tells them apart.)
 
 ```
-Claude:  cut a fresh git worktree off the default branch
-         invoke the  codex:codex-rescue  subagent  ──▶  node codex-companion.mjs task "<frozen contract>" --write
+Claude:  preflight `codex doctor`  — unhealthy? skip straight to Claude-fallback
+         cut a fresh git worktree off the default branch
+         launch, in the BACKGROUND, the frozen contract via the non-interactive CLI:
+             codex exec --json -C <worktree> -s workspace-write \
+                 -o codex-<NN>.result  "<frozen contract>"  > codex-<NN>.jsonl 2>&1
                                    │
-                                   ▼
-         the codex plugin spawns/reuses a local  `codex app-server`  process and runs Codex
-         against the worktree; Codex edits files and returns the diff SYNCHRONOUSLY
-                                   │
-                                   ▼   (same iteration)
-Claude:  run `verify` in the worktree → commit (with trailer) → push → close
-         fail → re-hand once via  --resume  with findings;  second fail → needs:human
+                                   ▼   (poll the JSONL every ~60–90s — growing = working, frozen = hung)
+         watch:  stall  = no new lines for codexStallSec (240s)   ─┐
+                 deadline = wall-clock past codexTimeoutSec (900s) ─┤──▶ kill + post last ~40 lines
+                                   │                                     + `-o` result, then fallback
+              clean exit ─────────┤────────── stall / deadline / verify-fail ──┘
+                                   ▼                                       fallback=claude → Claude
+Claude:  INDEPENDENTLY verify (own test run, not Codex's) →                 implements this iteration
+         commit (trailer) → push default branch → close → git worktree remove   · or park (needs:human)
 ```
 
-**What activates Codex here:** Claude itself launches Codex through the plugin's task runtime
-(`codex app-server`) the instant it has a frozen contract. Because it's synchronous, verify
-happens in the **same iteration** and **no Codex process ever sits idle** — Claude feeds it the
-next issue as soon as the last one lands. Cost: Codex runs on your machine and the session must
-be open. Requires the `codex` CLI installed and authenticated (`/codex:setup`). This is the
-default because it needs no external setup beyond the CLI and has no idle gap.
+**What activates Codex here:** Claude launches `codex exec --json` the instant it has a frozen
+contract and watches the streamed JSONL trajectory — `item.started`/`item.completed` events are
+Codex's tool calls, `agent_message` events its reasoning — to tell *working* from *hung*. A stall
+or deadline kills the run, posts the last JSONL lines + the `-o` result (so it's debuggable, never a
+lost black box), and falls back per config, so a wedged Codex **never blocks the queue**. `-C
+<worktree>` keeps edits isolated; Claude re-verifies independently, so verify still happens the
+**same iteration** and Codex never sits idle. Cost: runs on your machine, session open, under your
+local `codex` CLI's own auth (ChatGPT/Codex subscription or OpenAI key) — **not** Anthropic tokens.
+Requires the `codex` CLI installed and authenticated (`codex doctor` to check). Tunable via
+`codexTimeoutSec` / `codexStallSec` / `fallback` (see [Configuration](#configuration-options)).
+
+> **See what a run is doing.** Every local run leaves a `codex-<NN>.jsonl` next to its worktree.
+> Open [`tools/codex-json-viewer.html`](tools/codex-json-viewer.html) in any browser and drop the
+> file in to read the whole trajectory — reasoning, shell commands (with exit codes + output), and
+> file edits, in order. No build, no server, nothing uploaded.
 
 ### Cloud Codex (`worker=cloud`)
 
@@ -394,7 +415,8 @@ codex-loop/
 │   └── ROADMAP.md           ← phased plan (validation evidence per item)
 ├── CHANGELOG.md
 ├── skills/codex-loop/SKILL.md   ← the invocable /codex-loop orchestrator
-└── workflows/verify-fanout.mjs  ← deterministic parallel PR verification (Workflow asset)
+├── workflows/verify-fanout.mjs  ← deterministic parallel PR verification (Workflow asset)
+└── tools/codex-json-viewer.html ← open in a browser to read a local run's codex-<NN>.jsonl trajectory
 ```
 
 The skill contains no project-specific code. Everything a given repo needs — deploy command,

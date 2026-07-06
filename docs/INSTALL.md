@@ -29,9 +29,9 @@ Reopen the Claude Code session so it picks up the skill.
 ## 2. Preconditions
 
 - `gh` authenticated for the target repo.
-- For the **local** worker (**the default**): the `codex` plugin installed and `codex` CLI
-  authenticated (`/codex:setup` verifies this). If you can't run Codex locally, set
-  `worker=cloud` in the Control Tower config instead.
+- For the **local** worker (**the default**): the `codex` CLI installed and authenticated
+  (`codex doctor` verifies this) — the loop drives it via `codex exec`. If you can't run Codex
+  locally, set `worker=cloud` in the Control Tower config instead.
 - Clean working tree before starting.
 
 ## 3. First run in a repo — auto-detect + scaffold

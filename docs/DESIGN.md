@@ -23,7 +23,7 @@ its next issue. So the design automates the **orchestrator's cadence** and, opti
      guard → verify PRs → assign/implement Codex work → implement one Claude issue
            → deploy (if configured + asked) → log to Control Tower
      backend worker is pluggable:  CLOUD (label + LOOP:ASSIGN, await PR)
-                                   LOCAL (codex:codex-rescue --write in a worktree)
+                                   LOCAL (observable `codex exec --json` bg run in a worktree)
               ▼
   D. PACE     interactive /loop, self-paced via ScheduleWakeup
               (poll tight while in flight, back off when idle, halt when drained/paused)
@@ -57,7 +57,7 @@ guard (PAUSE? dirty tree? park check) →
 verify any state=pr-open Codex PRs (config verify cmd + issue plan; pass→merge, fail→bounce) →
 next agent:codex issue: freeze contract → route by worker:
       cloud → label + LOOP:ASSIGN                    (verified on a later tick)
-      local → worktree + codex:codex-rescue --write  (verified THIS tick) →
+      local → worktree + bg `codex exec --json` (watched via JSONL; verified THIS tick) →
 one agent:claude issue: implement → verify → push → close →
 deploy (only if config deploy set AND issue asks) →
 log tick to Control Tower issue → pace
@@ -67,9 +67,15 @@ log tick to Control Tower issue → pace
 
 - **CLOUD** — fire-and-forget; verify lands on a *later* iteration (idle gap persists; only
   the orchestrator restart is automated).
-- **LOCAL** — `codex:codex-rescue` runs Codex against a worktree and returns the diff in the
-  *same* iteration, so verify is immediate and Codex never sits idle. Cost: runs on your
-  machine, session open.
+- **LOCAL** — runs Codex against a worktree as an **observable background process**
+  (`codex exec --json … > codex-<NN>.jsonl`), not a blocking subagent. Claude preflights
+  `codex doctor`, launches the run, and polls the JSONL: a *growing* log = working, a *frozen*
+  one = hung. On stall (`codexStallSec`) / deadline (`codexTimeoutSec`) / verify-fail it kills the
+  run, posts the last JSONL lines + the `-o` result for debugging, and falls back (`fallback=claude`
+  → Claude implements; `park` → `needs:human`) — so a wedged Codex never blocks the queue. Claude
+  re-verifies independently in the *same* iteration, so Codex never sits idle. The `codex-<NN>.jsonl`
+  is viewable with [`tools/codex-json-viewer.html`](../tools/codex-json-viewer.html). Cost: runs on
+  your machine, session open, under the local `codex` CLI's own auth (not Anthropic tokens).
 - **HYBRID** — per-issue routing via `worker:local` / `worker:cloud` labels.
 
 ## 5. The cadence layer

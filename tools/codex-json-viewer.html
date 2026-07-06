@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>codex-loop · JSON trajectory viewer</title>
+<!--
+  codex-loop JSON viewer — see what a local Codex run is doing.
+
+  The local worker runs `codex exec --json … -o codex-<NN>.result > codex-<NN>.jsonl`, so every
+  run leaves a JSONL trajectory (one event per line) next to its worktree. This single, dependency-
+  free file renders that trajectory: drag a codex-<NN>.jsonl onto the page (or pick/paste it) and
+  read the agent's reasoning, the shell commands it ran, and the files it changed, in order.
+
+  No build, no network, no server — open it in any browser. Tolerates the stray non-JSON stderr
+  lines that `2>&1` merges into the log.
+-->
+<style>
+  :root {
+    --bg: #0e1116; --panel: #161b22; --panel-2: #1c232d; --line: #2a3543;
+    --text: #d6dee8; --muted: #8b98a8; --faint: #5b6673;
+    --accent: #4c9ffb; --green: #3fb950; --red: #f85149; --amber: #d29922; --violet: #a371f7;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; line-height: 1.5; }
+  a { color: var(--accent); }
+  code, pre, .mono { font-family: var(--mono); }
+
+  header { padding: 14px 18px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  header h1 { font-size: 15px; margin: 0; font-weight: 700; letter-spacing: -.2px; }
+  header .sub { color: var(--muted); font-size: 12px; }
+  header .grow { flex: 1; }
+  .btn { background: var(--panel-2); color: var(--text); border: 1px solid var(--line); border-radius: 7px; padding: 6px 11px; font-size: 12.5px; cursor: pointer; }
+  .btn:hover { border-color: var(--accent); }
+
+  #drop { margin: 18px; border: 1.5px dashed var(--line); border-radius: 12px; padding: 40px 20px; text-align: center; color: var(--muted); transition: .12s; }
+  #drop.hot { border-color: var(--accent); background: #12233b; color: var(--text); }
+  #drop h2 { margin: 0 0 6px; font-size: 16px; color: var(--text); font-weight: 700; }
+  #drop .hint { font-size: 12.5px; }
+  #drop textarea { width: 100%; max-width: 720px; height: 90px; margin-top: 16px; background: var(--panel); color: var(--text);
+    border: 1px solid var(--line); border-radius: 8px; padding: 10px; font-family: var(--mono); font-size: 12px; resize: vertical; }
+
+  .summary { display: flex; gap: 10px; flex-wrap: wrap; padding: 12px 18px; border-bottom: 1px solid var(--line); background: var(--panel); }
+  .kpi { background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; padding: 7px 12px; min-width: 96px; }
+  .kpi .v { font-size: 17px; font-weight: 700; font-family: var(--mono); }
+  .kpi .l { font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; }
+
+  .toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding: 10px 18px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--bg); z-index: 5; }
+  .toolbar input[type=search] { flex: 1; min-width: 180px; background: var(--panel); border: 1px solid var(--line); color: var(--text);
+    border-radius: 7px; padding: 6px 10px; font-size: 13px; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); background: var(--panel); border: 1px solid var(--line);
+    border-radius: 20px; padding: 4px 10px; cursor: pointer; user-select: none; }
+  .chip.off { opacity: .4; text-decoration: line-through; }
+  .chip .dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  main { padding: 8px 18px 60px; }
+  .row { border: 1px solid var(--line); border-radius: 9px; margin: 8px 0; overflow: hidden; background: var(--panel); }
+  .row > .head { display: flex; align-items: center; gap: 9px; padding: 8px 12px; cursor: pointer; }
+  .row > .head .ico { width: 20px; text-align: center; flex: 0 0 auto; }
+  .row > .head .title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .row > .head .title.mono { font-size: 12.5px; }
+  .row .body { border-top: 1px solid var(--line); padding: 0; display: none; }
+  .row.open .body { display: block; }
+  .row .body pre { margin: 0; padding: 11px 13px; overflow: auto; max-height: 460px; font-size: 12px; white-space: pre-wrap; word-break: break-word; }
+  .msg .body pre { color: #e7edf4; white-space: pre-wrap; }
+  .out { background: #0b0f14; }
+
+  .badge { font-size: 10.5px; font-family: var(--mono); padding: 2px 7px; border-radius: 5px; border: 1px solid var(--line); flex: 0 0 auto; }
+  .b-green { color: var(--green); border-color: #1f6f2e; } .b-red { color: var(--red); border-color: #7d2620; }
+  .b-amber { color: var(--amber); border-color: #7a5b13; } .b-muted { color: var(--muted); }
+  .b-violet { color: var(--violet); border-color: #4c2f7a; } .b-accent { color: var(--accent); border-color: #244a72; }
+  .seq { color: var(--faint); font-family: var(--mono); font-size: 11px; flex: 0 0 auto; width: 30px; text-align: right; }
+
+  .files { padding: 8px 12px; }
+  .files .f { display: flex; align-items: center; gap: 8px; padding: 3px 0; font-family: var(--mono); font-size: 12.5px; }
+  .files .f .dir { color: var(--faint); }
+  .empty { color: var(--faint); padding: 30px; text-align: center; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>codex-loop · JSON trajectory viewer</h1>
+    <div class="sub">renders a <code>codex-&lt;NN&gt;.jsonl</code> from a local Codex run</div>
+  </div>
+  <div class="grow"></div>
+  <button class="btn" id="pick">Open .jsonl…</button>
+  <button class="btn" id="reset">Clear</button>
+  <input type="file" id="file" accept=".jsonl,.json,.txt,application/json" class="hidden" />
+</header>
+
+<section id="drop">
+  <h2>Drop a <code>codex-&lt;NN&gt;.jsonl</code> here</h2>
+  <div class="hint">…or click <b>Open .jsonl…</b>, or paste the log below. Everything runs locally in your browser — nothing is uploaded.</div>
+  <textarea id="paste" placeholder='Paste JSONL here (one JSON event per line) and it renders automatically…'></textarea>
+</section>
+
+<div id="app" class="hidden">
+  <div class="summary" id="summary"></div>
+  <div class="toolbar">
+    <input type="search" id="q" placeholder="Filter by text (command, message, path)…" />
+    <span class="chip" data-k="agent_message"><span class="dot" style="background:var(--accent)"></span>messages</span>
+    <span class="chip" data-k="command_execution"><span class="dot" style="background:var(--green)"></span>commands</span>
+    <span class="chip" data-k="file_change"><span class="dot" style="background:var(--violet)"></span>edits</span>
+    <span class="chip" data-k="other"><span class="dot" style="background:var(--muted)"></span>other</span>
+    <button class="btn" id="expand">Expand all</button>
+    <button class="btn" id="collapse">Collapse all</button>
+  </div>
+  <main id="timeline"></main>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  const $ = (s, r = document) => r.querySelector(s);
+  const el = (t, c, txt) => { const e = document.createElement(t); if (c) e.className = c; if (txt != null) e.textContent = txt; return e; };
+  const esc = (s) => String(s == null ? "" : s);
+
+  const off = new Set();               // hidden categories
+  let ROWS = [];                       // rendered timeline rows (merged)
+
+  function parse(text) {
+    const events = [];
+    let bad = 0;
+    for (const raw of text.split(/\r?\n/)) {
+      const line = raw.trim();
+      if (!line) continue;
+      try { events.push(JSON.parse(line)); }
+      catch { events.push({ type: "_raw", _text: raw }); bad++; }
+    }
+    return { events, bad };
+  }
+
+  // Merge item.started + item.completed by item.id → one ordered row; keep envelope events for the summary.
+  function build(events) {
+    const byId = new Map(); const order = []; const raws = [];
+    let threadId = null, usage = null, turns = 0;
+    for (const ev of events) {
+      const t = ev.type;
+      if (t === "_raw") { raws.push({ kind: "other", itype: "stderr", raw: ev._text }); continue; }
+      if (t === "thread.started") { threadId = ev.thread_id || threadId; continue; }
+      if (t === "turn.started") { turns++; continue; }
+      if (t === "turn.completed") { usage = ev.usage || usage; continue; }
+      if (t === "item.started" || t === "item.completed") {
+        const it = ev.item || {}; const id = it.id != null ? String(it.id) : "_" + order.length;
+        if (!byId.has(id)) { byId.set(id, {}); order.push(id); }
+        Object.assign(byId.get(id), it, { _final: t === "item.completed" ? true : (byId.get(id)._final || false) });
+        continue;
+      }
+      // unknown envelope event — keep it visible as "other"
+      order.push("_ev" + order.length); byId.set("_ev" + (order.length - 1), { type: t, _envelope: ev });
+    }
+    const rows = order.map((id) => byId.get(id)).filter(Boolean);
+    // stderr/raw lines go to the end so they never break the trajectory ordering
+    for (const r of raws) rows.push(r);
+    return { rows, threadId, usage, turns, rawCount: raws.length };
+  }
+
+  function catOf(item) {
+    const t = item.type || item.itype;
+    if (t === "agent_message" || t === "command_execution" || t === "file_change") return t;
+    return "other";
+  }
+
+  function summarize(model) {
+    const wrap = $("#summary"); wrap.innerHTML = "";
+    const counts = { agent_message: 0, command_execution: 0, file_change: 0, other: 0, failed: 0 };
+    for (const r of model.rows) {
+      counts[catOf(r)]++;
+      if (r.type === "command_execution" && typeof r.exit_code === "number" && r.exit_code !== 0) counts.failed++;
+    }
+    const kpi = (v, l, cls) => { const k = el("div", "kpi"); const vv = el("div", "v" + (cls ? " " + cls : ""), v); const ll = el("div", "l", l); k.append(vv, ll); return k; };
+    wrap.append(
+      kpi(model.rows.length - model.rawCount, "events"),
+      kpi(counts.command_execution, "commands"),
+      kpi(counts.failed, "cmd failures", counts.failed ? "b-red" : ""),
+      kpi(counts.file_change, "file edits"),
+      kpi(counts.agent_message, "messages"),
+    );
+    if (model.usage) {
+      const u = model.usage;
+      const fmt = (n) => (n == null ? "–" : n.toLocaleString());
+      wrap.append(kpi(fmt(u.output_tokens), "out tokens"), kpi(fmt(u.input_tokens), "in tokens"), kpi(fmt(u.reasoning_output_tokens), "reasoning"));
+    }
+    if (model.rawCount) wrap.append(kpi(model.rawCount, "stderr lines", "b-amber"));
+    if (model.threadId) { const k = kpi("", "thread"); k.querySelector(".v").textContent = model.threadId.slice(0, 8); k.title = model.threadId; wrap.append(k); }
+  }
+
+  function statusBadge(item) {
+    if (item.type !== "command_execution") return null;
+    if (typeof item.exit_code === "number") return { txt: "exit " + item.exit_code, cls: item.exit_code === 0 ? "b-green" : "b-red" };
+    if (item.status && item.status !== "completed") return { txt: item.status, cls: "b-amber" };
+    return { txt: "done", cls: "b-muted" };
+  }
+
+  function renderRow(item, i) {
+    const cat = catOf(item);
+    const row = el("div", "row " + (cat === "agent_message" ? "msg" : ""));
+    row.dataset.cat = cat;
+    const head = el("div", "head");
+    const seq = el("span", "seq", cat === "other" && item.itype === "stderr" ? "•" : String(i + 1));
+    const ico = el("span", "ico");
+    const title = el("div", "title");
+    let searchText = "";
+    let bodyBuilder = null;
+
+    if (cat === "agent_message") {
+      ico.textContent = "💬";
+      const txt = esc(item.text);
+      title.textContent = txt.replace(/\s+/g, " ").slice(0, 140);
+      searchText = txt;
+      bodyBuilder = () => { const b = el("div", "body"); const p = el("pre"); p.textContent = txt; b.append(p); return b; };
+    } else if (cat === "command_execution") {
+      ico.textContent = "▸";
+      title.className = "title mono";
+      const cmd = esc(item.command).replace(/^\/bin\/[a-z]+ -l?c /, "").replace(/^"|"$/g, "");
+      title.textContent = cmd;
+      searchText = esc(item.command) + " " + esc(item.aggregated_output);
+      const sb = statusBadge(item);
+      if (sb) { const b = el("span", "badge " + sb.cls, sb.txt); head.dataset._badge = "1"; head.appendChild(b); }
+      bodyBuilder = () => {
+        const b = el("div", "body");
+        const full = el("pre", "out");
+        full.textContent = "$ " + esc(item.command) + "\n\n" + (esc(item.aggregated_output) || "(no output captured)");
+        b.append(full); return b;
+      };
+    } else if (cat === "file_change") {
+      ico.textContent = "✎";
+      const changes = Array.isArray(item.changes) ? item.changes : [];
+      title.textContent = changes.length + " file" + (changes.length === 1 ? "" : "s") + " changed";
+      searchText = changes.map((c) => c.path).join(" ");
+      const kindCls = { add: "b-green", update: "b-accent", delete: "b-red", rename: "b-violet" };
+      bodyBuilder = () => {
+        const b = el("div", "body"); const f = el("div", "files");
+        for (const c of changes) {
+          const line = el("div", "f");
+          line.append(el("span", "badge " + (kindCls[c.kind] || "b-muted"), c.kind || "?"));
+          const path = esc(c.path); const slash = path.lastIndexOf("/");
+          const dir = el("span", "dir", slash >= 0 ? path.slice(0, slash + 1) : "");
+          const base = el("span", null, slash >= 0 ? path.slice(slash + 1) : path);
+          line.append(dir, base); f.append(line);
+        }
+        b.append(f); return b;
+      };
+    } else {
+      ico.textContent = item.itype === "stderr" ? "⚠" : "∘";
+      const label = item.itype === "stderr" ? "stderr / non-JSON line" : ("event: " + esc(item.type || item.itype || "unknown"));
+      title.textContent = label;
+      const rawObj = item.raw != null ? item.raw : (item._envelope || item);
+      searchText = typeof rawObj === "string" ? rawObj : JSON.stringify(rawObj);
+      bodyBuilder = () => { const b = el("div", "body"); const p = el("pre"); p.textContent = typeof rawObj === "string" ? rawObj : JSON.stringify(rawObj, null, 2); b.append(p); return b; };
+    }
+
+    head.append(seq, ico, title);
+    row.append(head);
+    row._search = searchText.toLowerCase();
+    let built = false;
+    head.addEventListener("click", () => {
+      if (!built && bodyBuilder) { row.append(bodyBuilder()); built = true; }
+      row.classList.toggle("open");
+    });
+    row._openAll = () => { if (!built && bodyBuilder) { row.append(bodyBuilder()); built = true; } row.classList.add("open"); };
+    return row;
+  }
+
+  function render(text) {
+    const { events, bad } = parse(text);
+    if (!events.length) { alert("No JSON lines found in that file."); return; }
+    const model = build(events); model.bad = bad;
+    summarize(model);
+    const tl = $("#timeline"); tl.innerHTML = "";
+    ROWS = model.rows.map((r, i) => renderRow(r, i));
+    ROWS.forEach((r) => tl.append(r));
+    $("#drop").classList.add("hidden");
+    $("#app").classList.remove("hidden");
+    applyFilters();
+  }
+
+  function applyFilters() {
+    const q = $("#q").value.trim().toLowerCase();
+    for (const r of ROWS) {
+      const catHidden = off.has(r.dataset.cat);
+      const qHidden = q && !r._search.includes(q);
+      r.classList.toggle("hidden", catHidden || qHidden);
+    }
+  }
+
+  // wiring
+  $("#pick").addEventListener("click", () => $("#file").click());
+  $("#file").addEventListener("change", (e) => { const f = e.target.files[0]; if (f) f.text().then(render); });
+  $("#paste").addEventListener("input", (e) => { const v = e.target.value.trim(); if (v) render(v); });
+  $("#reset").addEventListener("click", () => { $("#app").classList.add("hidden"); $("#drop").classList.remove("hidden"); $("#paste").value = ""; $("#q").value = ""; });
+  $("#q").addEventListener("input", applyFilters);
+  $("#expand").addEventListener("click", () => ROWS.forEach((r) => !r.classList.contains("hidden") && r._openAll && r._openAll()));
+  $("#collapse").addEventListener("click", () => ROWS.forEach((r) => r.classList.remove("open")));
+  document.querySelectorAll(".chip").forEach((c) => c.addEventListener("click", () => {
+    const k = c.dataset.k; if (off.has(k)) { off.delete(k); c.classList.remove("off"); } else { off.add(k); c.classList.add("off"); }
+    applyFilters();
+  }));
+
+  const drop = $("#drop");
+  ["dragenter", "dragover"].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add("hot"); }));
+  ["dragleave", "drop"].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove("hot"); }));
+  drop.addEventListener("drop", (e) => { const f = e.dataTransfer.files[0]; if (f) f.text().then(render); });
+  // allow dropping anywhere once loaded, too
+  window.addEventListener("dragover", (e) => e.preventDefault());
+  window.addEventListener("drop", (e) => { if (e.target.closest("#app")) { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) f.text().then(render); } });
+})();
+</script>
+</body>
+</html>

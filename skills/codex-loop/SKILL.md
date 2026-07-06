@@ -69,8 +69,8 @@ Do this before any loop work, every invocation:
    Any missing key falls back to the default shown above. `state` is authoritative for
    PAUSE. If a key's value is empty and needed, auto-detect (CI) or skip (deploy).
 5. **Check the worker's dependency.** If effective `worker` is `local` or `hybrid`, confirm the
-   `codex` CLI is installed and authenticated (run `/codex:setup` if unsure). If it isn't,
-   stop and tell the user to run `/codex:setup` or set `worker=cloud`. If `worker=cloud`,
+   `codex` CLI is installed and authenticated (run `codex doctor` if unsure). If it isn't,
+   stop and tell the user to run `codex doctor` / `codex login` or set `worker=cloud`. If `worker=cloud`,
    note that Codex pickup depends on the externally-wired Codex Cloud agent (the skill only
    posts the assignment).
 
@@ -151,7 +151,7 @@ a full diff, so a wide wave stays cheap.
   (`Explore`) maps the area first. Auto-tag issues with `role:<persona>` by keyword
   (design→architect, deploy/CI→devops, docs→documentation, upgrade/CVE→dependency); when
   unsure, don't tag.
-- **Implement:** owner persona (*codex-implementer* via `codex:codex-rescue`, or
+- **Implement:** owner persona (*codex-implementer* via `codex exec`, or
   *claude-implementer*). If a `role:*` label is set, use that specialist's brief (e.g.
   `role:devops` → devops persona owns deploy config + smoke checks).
 - **Gates:** *verifier* (`general-purpose`, adversarial vs acceptance criteria) + *reviewer*

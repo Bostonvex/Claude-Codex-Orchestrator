@@ -183,9 +183,9 @@ To ship more, add issues (or run another `/codex-loop plan: …`) and the loop w
 ## Variations
 
 - **`worker=local`.** Iterations 2–3 wouldn't wait for an external PR. When #12 is picked,
-  Claude cuts a worktree and calls `codex:codex-rescue --write` to implement it *in the same
-  iteration*, then verifies and pushes immediately — no `LOOP:STATUS`/PR round-trip, no idle
-  gap. Same issue-state trail, tighter wall-clock.
+  Claude cuts a worktree and runs `codex exec --json` (observable background) to implement it *in
+  the same iteration*, watches the JSONL, then independently verifies and pushes immediately — no
+  `LOOP:STATUS`/PR round-trip, no idle gap. Same issue-state trail, tighter wall-clock.
 
 - **A bounce.** If verify had failed, Iteration 2 would post
   `<!-- LOOP:VERIFY issue=12 pr=41 verdict=bounce -->` with reproducible findings and leave

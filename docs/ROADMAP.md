@@ -24,10 +24,11 @@ inline. The only phase that stays open is Phase 3, which is **user-gated by desi
 
 ## Phase 2 — close the idle gap (local worker)  ✅ core done
 - [x] Worktree-per-issue isolation + cleanup — *validated: worktrees created/removed each run.*
-- [x] `codex:codex-rescue` → verify → commit → push — *validated live: local Codex implemented
-      issue #6 (and wave issue #7) against a worktree; independently re-verified before merge.*
-- [x] Point Codex at the worktree (`-C/--cwd`) — *found + fixed: the rescue subagent runs in the
-      session cwd, so the worktree must be passed explicitly.*
+- [x] Local Codex (`codex exec --json`, observable bg run) → independently verify → commit → push
+      — *validated live: implemented issue #6 (and wave #7) against a worktree, re-verified before
+      merge; hardened from a blocking subagent to a watched, killable background process in 0.1.1.*
+- [x] Point Codex at the worktree (`-C/--cwd`) — *found + fixed: local Codex otherwise runs in the
+      session cwd, so the worktree must be passed explicitly (`-C <worktree>`).*
 - [x] One-retry-then-park via `--resume` — *validated: bounced attempt #1, `--resume-last`
       continued the **same Codex thread** (`019f32f2…` matched), bounced again → issue swapped to
       `needs:human` and left the ready queue.*
