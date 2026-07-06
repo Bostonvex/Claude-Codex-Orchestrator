@@ -60,6 +60,9 @@ Do this before any loop work, every invocation:
    mode=sequential      # sequential | wave  (wave = parallel; see docs/ORCHESTRATION.md)
    concurrency=1        # max issues implemented at once in wave mode; merges still serialize
    gates=verify         # comma list: verify,lint,typecheck,review,cleanup — run before merge
+   codexTimeoutSec=900  # local-Codex hard wall-clock deadline before kill+fallback
+   codexStallSec=240    # local-Codex no-JSONL-growth stall window before kill+fallback
+   fallback=claude      # on Codex stall/deadline/verify-fail: claude (Claude implements) | park (needs:human)
    trailer=Co-Authored-By: Claude <noreply@anthropic.com>
    -->
    ```
@@ -213,16 +216,33 @@ Route by config `worker`:
 - **cloud** (or `worker:cloud` in hybrid): label `agent:codex loop:ready`; post
   `<!-- LOOP:ASSIGN agent=codex issue=NN contract=frozen -->`. Codex returns a PR that a
   later iteration verifies (step 1).
-- **local** (or `worker:local` in hybrid): cut a fresh worktree off the default branch; hand
-  the frozen contract to the **`codex:codex-rescue`** subagent with `--write` (one `task`
-  call — it is a thin forwarder). **Point Codex at the worktree explicitly:** the subagent runs
-  the companion in the *session's* cwd, not the worktree, so include the worktree path in the
-  task via the companion's `-C <worktree>` (aka `--cwd`) flag — otherwise Codex edits the
-  wrong repo. (`--write` maps to Codex's `workspace-write` sandbox.) Then **independently
-  verify**: run the `verify` command + the issue's Verification Plan in the worktree yourself
-  (don't rely on Codex's own test run). Pass → commit (with config `trailer`) → push to the
-  default branch → close → unblock successor → `git worktree remove` the worktree. Fail →
-  re-hand once via `--resume` with findings; second fail → `needs:human`.
+- **local** (or `worker:local` in hybrid) — **run Codex as an observable, bounded, fallible
+  background process, never a blocking black box.** A blocking subagent makes a 20-minute stall
+  indistinguishable from real progress; the JSONL-streamed background run below is the instrument
+  that tells them apart. Cut a fresh worktree off the default branch, then:
+  1. **Preflight** (once per session, and after any failed run): `codex doctor` — if auth/runtime
+     is unhealthy, skip the handoff and go straight to Claude-fallback. Catches a dead/unauthed CLI
+     before it burns the whole deadline.
+  2. **Launch** the frozen contract via the non-interactive CLI, in the background, streaming a
+     JSONL trajectory to a per-issue log. Do **not** use the blocking `codex:codex-rescue` subagent
+     for this — run, with the Bash tool's `run_in_background: true`:
+     `codex exec --json -C <worktree> -s workspace-write -o codex-<NN>.result "<frozen contract>" > codex-<NN>.jsonl 2>&1`
+     `-C <worktree>` fixes the wrong-repo footgun (Codex otherwise edits the session cwd); `-s
+     workspace-write` plus the CLI's `approval Never` mean it never silently waits for a human.
+  3. **Watch** — poll `codex-<NN>.jsonl` every ~60–90s (Read it or `wc -l`). Two kill signals:
+     **stall** = line count hasn't grown in `codexStallSec` (default 240); **deadline** = total
+     wall-clock exceeds `codexTimeoutSec` (default 900). A *growing* log = working; a *frozen* log
+     = hung. `item.started`/`item.completed` pairs are Codex's tool calls; `agent_message` events
+     are its reasoning — surface a one-line status to the user each poll.
+  4. **On clean exit** → **independently verify**: run the `verify` command + the issue's
+     Verification Plan in the worktree yourself (don't trust Codex's own test run). Pass → commit
+     (config `trailer`) → push default branch → close → unblock successor → `git worktree remove`.
+  5. **On stall / deadline / verify-fail** → kill the process, post the **last ~40 JSONL lines +
+     the `-o` result** to the issue and the Control Tower (so the run is debuggable, never a lost
+     black box), then act per config `fallback`: **`claude`** → Claude implements the issue
+     directly this iteration (§3); **`park`** → relabel `needs:human`. Either way the loop keeps
+     moving — a Codex stall never blocks the queue. One `codex exec resume` retry is allowed before
+     falling back, but it counts against the same deadline.
   Local Codex runs under your local `codex` CLI's own auth (ChatGPT/Codex subscription, or an
   OpenAI API key) — not Claude/Anthropic tokens.
 
