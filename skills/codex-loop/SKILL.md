@@ -116,8 +116,12 @@ Creating issues is outward, so **confirm-first**:
 3. **Order it.** Determine dependencies. The first unit in a chain is `loop:ready`; each
    dependent is `loop:blocked` with the blocker named in its body (e.g. "blocked on #NN").
    The loop unblocks each successor as its predecessor merges (swap `loop:blocked` → `loop:ready`).
-4. **Freeze each `agent:codex` contract** in the issue body — pin types, API shape, migration
-   id, and acceptance criteria — so it is assignable the moment it becomes ready.
+4. **Freeze each `agent:codex` contract** in the issue body as a structured `LOOP:CONTRACT`
+   block (see [Comment grammar](#comment-grammar-the-state-machine)) — the **interface**
+   (types / API shape / migration id), **in scope** + **out of scope — do NOT touch**,
+   **acceptance criteria**, the **verify** command, and the **context loaded** vs **assumptions**
+   it was frozen from — so it's assignable the moment it's ready, and any later bad merge is
+   diagnosable from the issue alone.
 5. **Confirm, then create.** Show the proposed issue list (title, owner, labels, blocked-on,
    frozen contract) and create the issues only on the user's OK. Post a one-line intake
    summary on the Control Tower issue.
@@ -200,19 +204,28 @@ Find issues whose newest comment is `LOOP:STATUS … state=pr-open` with no late
 - `gh pr checkout <n>`; run the config `verify` command (or auto-detect: `package.json` →
   `npm ci && npm test`; `pyproject.toml`/`pytest` → `python -m pytest -q`; adapt to the
   repo) **and** the issue's own Verification Plan; review the diff against its Acceptance
-  Criteria; `git checkout -`.
-- **Pass →** `gh pr merge <n> --squash`; post `<!-- LOOP:VERIFY issue=NN pr=### verdict=pass -->`
-  + the six-heading comment; close the issue; **unblock** its chain successor (swap
-  `loop:blocked` → `loop:ready`).
-- **Fail →** do NOT merge; post `<!-- LOOP:VERIFY issue=NN pr=### verdict=bounce -->` with
-  specific reproducible findings; leave it `agent:codex loop:ready`. Two consecutive bounces
-  on one issue → relabel `needs:human`.
+  Criteria.
+- **Scope check** — `git diff --name-only origin/<default>...` intersected with the
+  `LOOP:CONTRACT` **out-of-scope** paths. Any hit = `scope=violation` → **bounce**, regardless
+  of whether tests pass (Codex touched what it was told not to). No out-of-scope list → advisory
+  no-op.
+- **Post a `LOOP:HANDBACK` receipt** (before the verdict): the actual `git diff --name-only`,
+  the scope-check result, and tests **claimed** (from the PR body) vs **actually run by you**
+  (command + result). This is the audit record; `git checkout -`.
+- **Pass** (verify green **and** `scope=clean`) **→** `gh pr merge <n> --squash`; post
+  `<!-- LOOP:VERIFY issue=NN pr=### verdict=pass -->` + the six-heading comment; close; **unblock**
+  the chain successor (swap `loop:blocked` → `loop:ready`).
+- **Fail →** do NOT merge; post `<!-- LOOP:VERIFY issue=NN pr=### verdict=bounce -->` with the
+  `LOOP:HANDBACK` receipt + specific reproducible findings; on a scope violation also post
+  `<!-- LOOP:FALLBACK issue=NN reason=scope-violation action=claude -->`; leave it
+  `agent:codex loop:ready`. Two consecutive bounces on one issue → relabel `needs:human`.
 
 ### 2. Codex-owned work — assign or implement
 Pick the next actionable `agent:codex loop:ready` issue by config `priority` (default: issue
 number ascending; if backlog paths given, read them in order). Apply the park check. Freeze
-the contract in the issue body (pin types / API shape / migration id) if not already frozen.
-Route by config `worker`:
+the contract in the issue body as a `LOOP:CONTRACT` block (interface + in/out-of-scope +
+acceptance + verify + context-loaded/assumptions — see [Comment grammar](#comment-grammar-the-state-machine))
+if not already frozen. Route by config `worker`:
 - **cloud** (or `worker:cloud` in hybrid): label `agent:codex loop:ready`; post
   `<!-- LOOP:ASSIGN agent=codex issue=NN contract=frozen -->`. Codex returns a PR that a
   later iteration verifies (step 1).
@@ -234,15 +247,24 @@ Route by config `worker`:
      wall-clock exceeds `codexTimeoutSec` (default 900). A *growing* log = working; a *frozen* log
      = hung. `item.started`/`item.completed` pairs are Codex's tool calls; `agent_message` events
      are its reasoning — surface a one-line status to the user each poll.
-  4. **On clean exit** → **independently verify**: run the `verify` command + the issue's
-     Verification Plan in the worktree yourself (don't trust Codex's own test run). Pass → commit
-     (config `trailer`) → push default branch → close → unblock successor → `git worktree remove`.
-  5. **On stall / deadline / verify-fail** → kill the process, post the **last ~40 JSONL lines +
-     the `-o` result** to the issue and the Control Tower (so the run is debuggable, never a lost
-     black box), then act per config `fallback`: **`claude`** → Claude implements the issue
-     directly this iteration (§3); **`park`** → relabel `needs:human`. Either way the loop keeps
-     moving — a Codex stall never blocks the queue. One `codex exec resume` retry is allowed before
-     falling back, but it counts against the same deadline.
+  4. **On clean exit** → **scope-check, then independently verify, then post a receipt.**
+     `git diff --name-only` in the worktree; intersect with the `LOOP:CONTRACT` out-of-scope paths
+     (any hit = `scope=violation`). Run the `verify` command + the issue's Verification Plan
+     yourself — **don't trust Codex's own test run** (the `-o` result is its *claim*; your run is
+     the truth). Post a `<!-- LOOP:HANDBACK issue=NN worker=local files=<n> scope=… verify=… -->`
+     receipt: changed files, scope result, and claimed-vs-actually-ran tests. **Pass** (verify
+     green **and** `scope=clean`) → commit (config `trailer`) → push default branch → close →
+     unblock successor → `git worktree remove`. A **scope violation** is a fail even if tests pass
+     → treat as verify-fail below.
+  5. **On stall / deadline / verify-fail / scope-violation** → kill the process; post the **last
+     ~40 JSONL lines + the `-o` result** to the issue and the Control Tower (so the run is
+     debuggable, never a lost black box); post a structured
+     `<!-- LOOP:FALLBACK issue=NN reason=stall|deadline|verify-fail|scope-violation|direction-change action=claude|park -->`
+     (use `direction-change` when Codex's diff/`agent_message` trajectory diverged from the frozen
+     contract). Then act per config `fallback`: **`claude`** → Claude implements the issue directly
+     this iteration (§3); **`park`** → relabel `needs:human`. Either way the loop keeps moving — a
+     Codex stall never blocks the queue. One `codex exec resume` retry is allowed before falling
+     back, but it counts against the same deadline.
   Local Codex runs under your local `codex` CLI's own auth (ChatGPT/Codex subscription, or an
   OpenAI API key) — not Claude/Anthropic tokens.
 
@@ -294,11 +316,44 @@ an issue that trips the park conditions (park that issue, continue the loop for 
 
 ## Comment grammar (the state machine)
 ```
-<!-- LOOP:ASSIGN agent=codex issue=NN contract=frozen -->      Claude → Codex
-<!-- LOOP:STATUS agent=codex issue=NN state=… pr=### ci=… -->  Codex → Claude (you READ these)
+<!-- LOOP:CONTRACT issue=NN -->                                 Claude freezes the handoff (issue body)
+<!-- LOOP:ASSIGN agent=codex issue=NN contract=frozen -->       Claude → Codex
+<!-- LOOP:STATUS agent=codex issue=NN state=… pr=### ci=… -->   Codex → Claude (you READ these)
+<!-- LOOP:HANDBACK issue=NN worker=… files=N scope=clean|violation verify=pass|fail -->   Claude's receipt on return
+<!-- LOOP:FALLBACK issue=NN reason=stall|deadline|verify-fail|scope-violation|direction-change action=claude|park -->
 <!-- LOOP:VERIFY issue=NN pr=### verdict=pass|bounce -->        Claude's verdict
-CODEX-LOOP:CONFIG block (Control Tower issue body)             config incl. state=RUN|PAUSE
+CODEX-LOOP:CONFIG block (Control Tower issue body)              config incl. state=RUN|PAUSE
 ```
+
+**The handoff is an audit log, not a queue item.** Two structured blocks make every bad merge
+diagnosable — *underspecified* vs *scope violation* vs *wrong verification* — from the issue alone.
+
+`LOOP:CONTRACT` — frozen by Claude **before** assign, in the issue body:
+```
+<!-- LOOP:CONTRACT issue=NN -->
+### Frozen contract
+- **Interface:** types / API shape / migration id — the frozen surface
+- **In scope:** files/areas Codex may change
+- **Out of scope — do NOT touch:** paths/globs that must stay untouched
+- **Acceptance criteria:** checkable bullets (the verifier judges against these)
+- **Verify:** the exact command(s) to run before handback
+- **Context loaded:** the files/docs/commits Claude actually read to freeze this
+- **Assumptions (unverified):** things taken as true but not checked
+```
+
+`LOOP:HANDBACK` — posted by Claude on **every** return (local clean-exit or cloud PR verify):
+```
+<!-- LOOP:HANDBACK issue=NN worker=local|cloud files=<n> scope=clean|violation verify=pass|fail -->
+### Handback receipt
+- **Changed files** (`git diff --name-only`): the actual diff, not prose
+- **Scope check:** changed ∩ out-of-scope = none → clean · else → violation (forces a bounce)
+- **Tests — claimed (Codex, from `-o` result / PR body):** … · **actually run (Claude):** cmd + result
+- **Contract adherence:** met, or the specific deviations
+```
+
+Backward-compatible: an issue with no `LOOP:CONTRACT` still runs (the scope check is an advisory
+no-op when no out-of-scope list exists) — but freezing one is required for `agent:codex` work
+going forward.
 
 ## Guardrails (never weakened)
 CI green before merge/deploy; never leave the default branch red. Prefer additive/idempotent
@@ -306,3 +361,10 @@ migrations; never reseed/drop live data or destroy audit trails without explicit
 authorization. Deploy only when configured and the issue asks. Commit messages end with the
 configured `trailer`. Park (don't act) on money/legal/external-comms/unauthorized-destructive/
 ambiguous. Claude is the sole merger and deployer; Codex never merges or deploys.
+
+**Audit invariant.** No `agent:codex` issue is merged/closed without the full chain on it —
+`LOOP:CONTRACT` (frozen scope + acceptance) → `LOOP:ASSIGN` → `LOOP:HANDBACK` (changed files +
+scope check + claimed-vs-actually-ran) → `LOOP:VERIFY` — so any merge is reconstructable, and a
+bad outcome triages cleanly to *underspecified* (thin contract), *scope violation* (handback
+flagged it), or *wrong verification* (claimed ≠ actually-ran). A merge with a `scope=violation`
+handback is a guardrail breach.

@@ -35,11 +35,20 @@ Every loop comment begins with an HTML-comment marker (machine-readable), follow
 six-heading prose block (human-readable).
 
 ```
+Freeze the handoff (Claude, in the issue body — see "Handoff as audit log" below):
+  <!-- LOOP:CONTRACT issue=NN -->
+
 Assign (Claude → Codex):
   <!-- LOOP:ASSIGN agent=codex issue=NN contract=frozen -->
 
 Codex status (Claude READS these; cloud Codex writes them):
   <!-- LOOP:STATUS agent=codex issue=NN state=… pr=### ci=… -->     state ∈ {started,pr-open,blocked,failed}
+
+Handback receipt (Claude, on every return — local clean-exit or cloud PR verify):
+  <!-- LOOP:HANDBACK issue=NN worker=local|cloud files=N scope=clean|violation verify=pass|fail -->
+
+Escalation reason (Claude, on stall/deadline/verify-fail/scope-violation/direction-change):
+  <!-- LOOP:FALLBACK issue=NN reason=stall|deadline|verify-fail|scope-violation|direction-change action=claude|park -->
 
 Claude verdict on a Codex PR:
   <!-- LOOP:VERIFY issue=NN pr=### verdict=pass|bounce -->
@@ -47,6 +56,42 @@ Claude verdict on a Codex PR:
 
 Six-heading prose (follows every marker):
 `Current State / Changed / Verification / Deployment / Risks-Unknowns / Next Recommended Step`
+
+## Handoff as audit log
+
+The issue is not just a queue item — it carries enough of the **handoff contract** to debug a bad
+outcome later. Two structured blocks turn "why did the loop make a bad merge?" into a clean triage
+— *underspecified* vs *scope violation* vs *wrong verification* — readable from the issue alone.
+
+**`LOOP:CONTRACT`** — frozen by Claude *before* assign, in the issue body:
+
+```
+<!-- LOOP:CONTRACT issue=NN -->
+### Frozen contract
+- **Interface:** types / API shape / migration id — the frozen surface
+- **In scope:** files/areas Codex may change
+- **Out of scope — do NOT touch:** paths/globs that must stay untouched
+- **Acceptance criteria:** checkable bullets (the verifier judges against these)
+- **Verify:** the exact command(s) to run before handback
+- **Context loaded:** the files/docs/commits Claude actually read to freeze this
+- **Assumptions (unverified):** things taken as true but not checked
+```
+
+**`LOOP:HANDBACK`** — posted by Claude on every return (local clean-exit or cloud PR verify):
+
+```
+<!-- LOOP:HANDBACK issue=NN worker=local|cloud files=<n> scope=clean|violation verify=pass|fail -->
+### Handback receipt
+- **Changed files** (`git diff --name-only`): the actual diff, not prose
+- **Scope check:** changed ∩ out-of-scope = none → clean · else → violation (forces a bounce)
+- **Tests — claimed (Codex, from `-o` result / PR body):** … · **actually run (Claude):** cmd + result
+- **Contract adherence:** met, or the specific deviations
+```
+
+**Audit invariant:** no `agent:codex` issue merges/closes without the full chain
+`LOOP:CONTRACT → LOOP:ASSIGN → LOOP:HANDBACK → LOOP:VERIFY`; a merge over a `scope=violation`
+handback is a guardrail breach. Backward-compatible — an issue with no `LOOP:CONTRACT` still runs
+(the scope check is an advisory no-op), but freezing one is required for `agent:codex` work.
 
 ## The Control Tower issue
 
@@ -76,16 +121,17 @@ trailer=Co-Authored-By: Claude <noreply@anthropic.com>
 ## Backend issue lifecycle
 
 ```
- loop:blocked ──(predecessor merged)──▶ loop:ready ──(contract frozen)──▶ LOOP:ASSIGN contract=frozen
+ loop:blocked ─(predecessor merged)─▶ loop:ready ─(freeze LOOP:CONTRACT)─▶ LOOP:ASSIGN contract=frozen
                                                                                    │
                                       ┌── cloud ──▶ LOOP:STATUS state=pr-open ──┐  │
                                       └── local ──▶ worktree diff ──────────────┤◀─┘
                                                                                  ▼
-                                                    Claude verify: CI + plan + diff
-                                             ┌──── pass ────┐        ┌──── bounce ────┐
-                                             ▼              │        ▼                │
-                                  merge + LOOP:VERIFY pass  │   LOOP:VERIFY bounce (relabel loop:ready)
-                                  close; unblock successor  │   2× bounce → needs:human
+                          Claude: scope-check + verify (CI + plan + diff) ─▶ LOOP:HANDBACK receipt
+                                             ┌── pass (green & scope clean) ─┐   ┌──── fail ────┐
+                                             ▼                               │   ▼              │
+                                  merge + LOOP:VERIFY pass                   │  LOOP:VERIFY bounce (relabel loop:ready)
+                                  close; unblock successor                   │  scope-violation → LOOP:FALLBACK
+                                                                             │  2× bounce → needs:human
 ```
 
 ## Why this survives restarts

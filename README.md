@@ -260,7 +260,13 @@ Claude verifies: run `verify` cmd + the issue's Verification Plan + review the d
 ```
 
 Freezing the contract first is what makes Codex's output verifiable — Claude knows exactly
-what "correct" means before Codex starts. Claude is the **sole merger and deployer**; Codex
+what "correct" means before Codex starts. The freeze is a structured **`LOOP:CONTRACT`** block
+(interface · in-scope · **out-of-scope — do NOT touch** · acceptance · verify cmd · context-loaded
+vs assumptions), and every return posts a **`LOOP:HANDBACK`** receipt (changed files from `git
+diff`, a scope check, and tests *claimed by Codex* vs *actually run by Claude*) — so the issue is an
+**audit log**, not a queue item: a bad merge triages to *underspecified* vs *scope violation* vs
+*wrong verification* from the issue alone. See [Issue protocol](docs/ISSUE-PROTOCOL.md#handoff-as-audit-log).
+Claude is the **sole merger and deployer**; Codex
 never merges or deploys.
 
 ### Local Codex (`worker=local`, default)

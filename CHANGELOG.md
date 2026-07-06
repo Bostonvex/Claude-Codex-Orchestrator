@@ -2,6 +2,29 @@
 
 All notable changes to codex-loop. Newest first.
 
+## 0.2.0 — 2026-07-06
+
+### Added
+- **Handoff as an audit log.** The Claude→Codex handoff now carries a structured, debuggable
+  contract, so a bad merge triages to *underspecified* vs *scope violation* vs *wrong verification*
+  from the issue alone:
+  - **`LOOP:CONTRACT`** — the frozen handoff block in the issue body: interface, **in scope** and
+    **out of scope — do NOT touch**, acceptance criteria, verify command, and **context loaded** vs
+    **assumptions** (provenance of what Claude read vs assumed).
+  - **`LOOP:HANDBACK`** — a receipt posted on every return: changed files from
+    `git diff --name-only` (not prose), a **scope check** (changed ∩ out-of-scope → clean/violation),
+    and tests **claimed by Codex** (from the `-o` result / PR body) vs **actually run by Claude**.
+  - **`LOOP:FALLBACK`** — a structured escalation reason
+    (`stall|deadline|verify-fail|scope-violation|direction-change`) alongside the JSONL evidence.
+- **Scope-violation is a first-class bounce** — a diff that touches out-of-scope paths bounces even
+  if the tests pass.
+- **Audit invariant** — no `agent:codex` issue merges/closes without the full
+  `LOOP:CONTRACT → ASSIGN → HANDBACK → VERIFY` chain; merging over a `scope=violation` handback is a
+  guardrail breach.
+
+Backward-compatible: issues without a `LOOP:CONTRACT` still run (the scope check is an advisory
+no-op); freezing one is required for `agent:codex` work going forward.
+
 ## 0.1.1 — 2026-07-06
 
 ### Changed
