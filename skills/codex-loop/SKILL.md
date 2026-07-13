@@ -242,6 +242,12 @@ if not already frozen. Route by config `worker`:
      `codex exec --json -C <worktree> -s workspace-write -o codex-<NN>.result "<frozen contract>" > codex-<NN>.jsonl 2>&1`
      `-C <worktree>` fixes the wrong-repo footgun (Codex otherwise edits the session cwd); `-s
      workspace-write` plus the CLI's `approval Never` mean it never silently waits for a human.
+     **This form is mandatory for EVERY `codex exec` invocation — including ad-hoc, review-only,
+     and one-off kicks outside the tick loop.** Always `--json` with the trajectory redirected to
+     a `codex-<slug>.jsonl` in a worktree/clone **under `~/Code`** (never `/tmp`): the operator's
+     live monitor (`~/.codex/codexmon.py`, root `~/Code`) tails exactly those files, and a kick
+     without them is an invisible black box to the human (2026-07-13: a /tmp, no-`--json` review
+     kick looked like "Codex isn't working" mid-run).
   3. **Watch** — poll `codex-<NN>.jsonl` every ~60–90s (Read it or `wc -l`). Two kill signals:
      **stall** = line count hasn't grown in `codexStallSec` (default 240); **deadline** = total
      wall-clock exceeds `codexTimeoutSec` (default 900). A *growing* log = working; a *frozen* log
