@@ -239,9 +239,13 @@ if not already frozen. Route by config `worker`:
   2. **Launch** the frozen contract via the non-interactive CLI, in the background, streaming a
      JSONL trajectory to a per-issue log. Do **not** use the blocking `codex:codex-rescue` subagent
      for this — run, with the Bash tool's `run_in_background: true`:
-     `codex exec --json -C <worktree> -s workspace-write -o codex-<NN>.result "<frozen contract>" > codex-<NN>.jsonl 2>&1`
+     `codex exec --json -C <worktree> -s workspace-write -o codex-<NN>.result "<frozen contract>" < /dev/null > codex-<NN>.jsonl 2>&1`
      `-C <worktree>` fixes the wrong-repo footgun (Codex otherwise edits the session cwd); `-s
      workspace-write` plus the CLI's `approval Never` mean it never silently waits for a human.
+     **`< /dev/null` is load-bearing:** when stdin is a non-TTY pipe (any backgrounded Bash),
+     `codex exec` appends stdin to the prompt and BLOCKS until it closes — without the redirect
+     the run hangs forever at "Reading additional input from stdin..." with ~0 CPU, looking
+     exactly like a stall (2026-07-13, twice).
      **This form is mandatory for EVERY `codex exec` invocation — including ad-hoc, review-only,
      and one-off kicks outside the tick loop.** Always `--json` with the trajectory redirected to
      a `codex-<slug>.jsonl` in a worktree/clone **under `~/Code`** (never `/tmp`): the operator's
